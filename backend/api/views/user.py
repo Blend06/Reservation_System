@@ -3,6 +3,10 @@ from api.models import User
 from api.serializers import UserSerializer
 
 
+class IsAdminUser(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_admin
+
 class IsAdminOrSelf(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user.is_admin:
@@ -16,7 +20,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ["list", "destroy"]:
-            permission_classes = [permissions.IsAdminUser]
+            permission_classes = [IsAdminUser]
         else:
             permission_classes = [permissions.IsAuthenticated]
         return [p() for p in permission_classes]

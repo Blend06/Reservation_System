@@ -3,13 +3,17 @@ from api.models import User
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
+    is_staff_member = serializers.BooleanField(source='is_staff', required=False)
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "password", "is_admin"]
+        fields = ["id", "username", "email", "first_name", "last_name", "phone", "password", "is_admin", "is_staff_member", "is_active"]
 
     def create(self, validated_data):
         password = validated_data.pop("password")
+        # Handle is_staff_member mapping
+        if 'is_staff' in validated_data:
+            validated_data['is_staff'] = validated_data.pop('is_staff')
         user = User(**validated_data)
         user.set_password(password)
         user.save()
@@ -17,6 +21,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
+        # Handle is_staff_member mapping
+        if 'is_staff' in validated_data:
+            validated_data['is_staff'] = validated_data.pop('is_staff')
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if password:
