@@ -37,7 +37,7 @@ const Reservations = () => {
       // Combine date and time into start_time and end_time
       const startDateTime = `${newReservation.date}T${newReservation.time}:00`;
       const endDateTime = new Date(startDateTime);
-      endDateTime.setHours(endDateTime.getHours() + 1); // Default 1 hour duration
+      endDateTime.setHours(endDateTime.getHours() + 1); 
       
       const reservationData = {
         start_time: startDateTime,
