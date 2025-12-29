@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DEBUG=1
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: >
+      sh -c "python manage.py makemigrations &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  celery-worker:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    environment:
+      - DEBUG=1
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: >
+      sh -c "sleep 30 &&
+             celery -A backend worker --loglevel=info --pool=solo"
+    restart: unless-stopped
+
+  celery-beat:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    environment:
+      - DEBUG=1
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: >
+      sh -c "sleep 35 &&
+             celery -A backend beat --loglevel=info"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    command: npm start
+
+volumes:
+  redis_data:
