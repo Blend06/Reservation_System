@@ -1,70 +1,304 @@
-# Getting Started with Create React App
+# Frontend Documentation
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Overview
+React.js frontend for the Fade District reservation system with modern UI components, responsive design, and optimized architecture.
 
-## Available Scripts
+## 🏗️ Architecture
 
-In the project directory, you can run:
+### Technology Stack
+- **React 18** - Modern React with hooks
+- **React Router** - Client-side routing
+- **Tailwind CSS** - Utility-first styling
+- **Axios** - HTTP client for API calls
+- **Zustand** - Lightweight state management
 
-### `npm start`
+## 📁 Project Structure
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```
+frontend/src/
+├── components/
+│   ├── ui/                    # Reusable UI components
+│   │   ├── Modal.jsx         # Modal component with variants
+│   │   ├── Table.jsx         # Standardized table component
+│   │   ├── StatusBadge.jsx   # Status display component
+│   │   ├── LoadingSpinner.jsx # Loading indicators
+│   │   └── index.js          # Clean exports
+│   ├── forms/                 # Form components
+│   │   ├── EditReservationForm.jsx
+│   │   ├── EditUserForm.jsx
+│   │   └── index.js
+│   ├── admin/                 # Admin panel components
+│   │   ├── ReservationsManagement.jsx
+│   │   └── UsersManagement.jsx
+│   ├── auth/                  # Authentication components
+│   │   ├── Login.jsx
+│   │   └── Register.jsx
+│   ├── Dashboard.jsx          # Main dashboard
+│   ├── Homepage.jsx           # Landing page
+│   └── Reservations.jsx       # User reservations
+├── hooks/                     # Custom React hooks
+│   ├── useReservations.js    # Reservation state management
+│   └── useUsers.js           # User state management
+├── utils/                     # Utility functions
+│   ├── dateUtils.js          # Date formatting utilities
+│   └── statusUtils.js        # Status color/text utilities
+├── auth/
+│   └── authStore.js          # Authentication state
+├── api/
+│   └── axios.js              # API configuration
+├── router/
+│   └── index.js              # Route definitions
+├── App.js                    # Main app component
+└── index.css                 # Global styles
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🎨 UI Components
 
-### `npm test`
+### Reusable Components
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+#### Modal Component
+```jsx
+<Modal isOpen={isOpen} onClose={onClose} title="Edit Item" size="lg">
+  <FormContent />
+</Modal>
+```
 
-### `npm run build`
+#### Table Component
+```jsx
+<Table 
+  headers={['Name', 'Status', 'Actions']}
+  title="Items List"
+  subtitle="Manage your items"
+>
+  {items.map(item => <TableRow key={item.id} />)}
+</Table>
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+#### Status Badge
+```jsx
+<StatusBadge 
+  status="confirmed" 
+  isEditable={true}
+  onChange={handleStatusChange}
+/>
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+#### Loading Spinner
+```jsx
+<LoadingSpinner size="lg" fullScreen={true} />
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🪝 Custom Hooks
 
-### `npm run eject`
+### useReservations Hook
+```jsx
+const {
+  reservations,        // Filtered reservations
+  allReservations,     // All reservations
+  loading,             // Loading state
+  filterStatus,        // Current filter
+  setFilterStatus,     // Set filter function
+  fetchReservations,   // Refresh data
+  deleteReservation,   // Delete function
+  updateReservationStatus, // Update status
+  updateReservation    // Update reservation
+} = useReservations();
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### useUsers Hook
+```jsx
+const {
+  users,          // Users array
+  loading,        // Loading state
+  fetchUsers,     // Refresh data
+  deleteUser,     // Delete function
+  updateUser      // Update function
+} = useUsers();
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 🛠️ Utility Functions
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Date Utilities
+```jsx
+import { 
+  formatDateToDDMMYYYY,    // Format to DD/MM/YYYY
+  formatTime,              // Format time display
+  formatDateInput,         // Auto-format input
+  convertToBackendDate,    // Convert to backend format
+  convertFromBackendDate   // Convert from backend
+} from '../utils/dateUtils';
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Status Utilities
+```jsx
+import { 
+  getStatusColor,      // Get status badge colors
+  getUserRoleColor,    // Get user role colors
+  getUserRoleText,     // Get user role text
+  getActiveStatusColor, // Get active status colors
+  capitalizeStatus     // Capitalize status text
+} from '../utils/statusUtils';
+```
 
-## Learn More
+## 🔐 Authentication
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Auth Store (Zustand)
+```jsx
+const { 
+  user,           // Current user
+  token,          // JWT token
+  isAuthenticated, // Auth status
+  login,          // Login function
+  logout,         // Logout function
+  register        // Register function
+} = useAuth();
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Protected Routes
+```jsx
+// Automatic redirection based on auth status
+// Admin routes protected by role checking
+```
+
+## 📱 Responsive Design
+
+### Breakpoints (Tailwind CSS)
+- **Mobile**: < 640px
+- **Tablet**: 640px - 1024px  
+- **Desktop**: > 1024px
+
+### Key Features
+- Mobile-first design approach
+- Responsive tables with horizontal scroll
+- Adaptive navigation
+- Touch-friendly buttons and inputs
+
+## 🎯 Key Features
+
+### 1. User Management
+- Registration with phone number
+- Profile editing
+- Role-based access control
+- Admin user management panel
+
+### 2. Reservation System
+- Create new reservations
+- View personal reservations
+- Real-time status updates
+- Date/time picker with DD/MM/YYYY format
+
+### 3. Admin Panel
+- User management (CRUD operations)
+- Reservation management
+- Status filtering and updates
+- System statistics dashboard
+
+### 4. Modern UX
+- Loading states for all operations
+- Confirmation dialogs for destructive actions
+- Form validation and error handling
+- Responsive design for all devices
+
+## 🚀 Getting Started
+
+### Installation
+```bash
+cd frontend
+npm install
+```
+
+### Development
+```bash
+npm start
+# Runs on http://localhost:3000
+```
+
+### Build for Production
+```bash
+npm run build
+```
+
+### Docker Development
+```bash
+docker-compose up frontend
+```
+
+## 📦 Dependencies
+
+### Core Dependencies
+```json
+{
+  "react": "^18.2.0",
+  "react-dom": "^18.2.0",
+  "react-router-dom": "^6.8.0",
+  "axios": "^1.3.0",
+  "zustand": "^4.3.0"
+}
+```
+
+### Development Dependencies
+```json
+{
+  "tailwindcss": "^3.2.0",
+  "postcss": "^8.4.0",
+  "autoprefixer": "^10.4.0"
+}
+```
+
+## 🎨 Styling
+
+### Tailwind Configuration
+- Custom color palette
+- Responsive utilities
+- Component-specific styles
+- Dark mode support (future)
+
+### Design System
+- Consistent spacing (4px grid)
+- Typography scale
+- Color palette for status indicators
+- Standardized component sizes
+
+## 🔧 API Integration
+
+### Axios Configuration
+```jsx
+// Automatic token attachment
+// Request/response interceptors
+// Error handling
+// Base URL configuration
+```
+
+### Error Handling
+- Network error detection
+- User-friendly error messages
+- Automatic retry for failed requests
+- Loading state management
+
+## 🧪 Testing
+```bash
+npm test
+```
+
+## 📈 Performance Optimizations
 
 ### Code Splitting
+- Route-based code splitting
+- Lazy loading for admin components
+- Dynamic imports for large dependencies
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### State Management
+- Efficient re-renders with Zustand
+- Memoized components where needed
+- Optimized API calls
 
-### Analyzing the Bundle Size
+### Bundle Optimization
+- Tree shaking enabled
+- Production build optimization
+- Asset compression
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 🐳 Docker Support
+- Multi-stage Dockerfile
+- Nginx serving for production
+- Environment variable support
+- Health checks included

@@ -34,14 +34,22 @@ const Reservations = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Combine date and time into start_time and end_time
-      const startDateTime = `${newReservation.date}T${newReservation.time}:00`;
-      const endDateTime = new Date(startDateTime);
-      endDateTime.setHours(endDateTime.getHours() + 1); 
+      // Convert DD/MM/YYYY to YYYY-MM-DD format for backend
+      const [day, month, year] = newReservation.date.split('/');
+      const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      
+      // Create datetime string without timezone conversion
+      // This will be interpreted as local time by the backend
+      const startDateTime = `${formattedDate}T${newReservation.time}:00`;
+      
+      // For end time, add 1 hour to the time string directly
+      const [hours, minutes] = newReservation.time.split(':');
+      const endHour = (parseInt(hours) + 1).toString().padStart(2, '0');
+      const endDateTime = `${formattedDate}T${endHour}:${minutes}:00`;
       
       const reservationData = {
         start_time: startDateTime,
-        end_time: endDateTime.toISOString(),
+        end_time: endDateTime,
         status: 'pending'
       };
       
@@ -109,15 +117,61 @@ const Reservations = () => {
           
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-              <input
-                type="date"
-                name="date"
-                value={newReservation.date}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition duration-200"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date (DD/MM/YYYY)</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  name="date"
+                  placeholder="DD/MM/YYYY (e.g., 24/12/2025)"
+                  value={newReservation.date}
+                  onChange={(e) => {
+                    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                    if (value.length >= 2) value = value.slice(0,2) + '/' + value.slice(2);
+                    if (value.length >= 5) value = value.slice(0,5) + '/' + value.slice(5,9);
+                    setNewReservation({...newReservation, date: value});
+                  }}
+                  maxLength="10"
+                  required
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition duration-200"
+                />
+                <div 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Create a temporary date input
+                    const input = document.createElement('input');
+                    input.type = 'date';
+                    input.style.visibility = 'hidden';
+                    input.style.position = 'absolute';
+                    
+                    // Set current value if exists
+                    if (newReservation.date) {
+                      const [day, month, year] = newReservation.date.split('/');
+                      if (day && month && year && year.length === 4) {
+                        input.value = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                      }
+                    }
+                    
+                    input.onchange = (event) => {
+                      if (event.target.value) {
+                        const [year, month, day] = event.target.value.split('-');
+                        const formattedDate = `${day}/${month}/${year}`;
+                        setNewReservation({...newReservation, date: formattedDate});
+                      }
+                      document.body.removeChild(input);
+                    };
+                    
+                    document.body.appendChild(input);
+                    input.showPicker ? input.showPicker() : input.click();
+                  }}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-500 transition duration-200 cursor-pointer p-1"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              </div>
             </div>
             
             <div>
@@ -184,7 +238,7 @@ const Reservations = () => {
                       
                       <div>
                         <div className="text-lg font-semibold text-gray-900">
-                          {new Date(reservation.start_time).toLocaleDateString('en-US', {
+                          {new Date(reservation.start_time).toLocaleDateString('en-GB', {
                             weekday: 'long',
                             year: 'numeric',
                             month: 'long',
@@ -208,7 +262,7 @@ const Reservations = () => {
                         {reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}
                       </span>
                       <div className="text-xs text-gray-500 mt-1">
-                        Created: {new Date(reservation.created_at).toLocaleDateString()}
+                        Created: {new Date(reservation.created_at).toLocaleDateString('en-GB')}
                       </div>
                     </div>
                   </div>
