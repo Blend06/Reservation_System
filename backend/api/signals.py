@@ -30,7 +30,7 @@ def handle_reservation_changes(sender, instance, created, **kwargs):
     """
     Send email notifications:
     - To admin when new reservation is created
-    - To customer when status changes to confirmed/cancelled
+    - To customer when status changes to confirmed/canceled
     """
     try:
         # Get user information
@@ -87,8 +87,8 @@ def handle_reservation_changes(sender, instance, created, **kwargs):
             if old_status != current_status:
                 logger.info(f'Reservation {instance.id} status changed from {old_status} to {current_status}')
                 
-                # Send email for confirmed or cancelled status
-                if current_status in ['confirmed', 'cancelled']:
+                # Send email for confirmed or canceled status
+                if current_status in ['confirmed', 'canceled']:
                     logger.info(f'Sending customer email for reservation {instance.id} with status {current_status}')
                     
                     # Try Celery first, fallback to direct email

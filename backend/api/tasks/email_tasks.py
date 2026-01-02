@@ -28,7 +28,7 @@ def send_email_direct(subject, template, context, recipient_list):
 @shared_task
 def send_reservation_status_email(user_email, user_name, reservation_id, status, reservation_date, reservation_time):
     """
-    Send email notification when reservation status changes to confirmed or cancelled
+    Send email notification when reservation status changes to confirmed or canceled
     """
     try:
         logger.info(f'Starting email task for reservation {reservation_id} with status {status} to {user_email}')
@@ -36,8 +36,8 @@ def send_reservation_status_email(user_email, user_name, reservation_id, status,
         if status == 'confirmed':
             subject = 'Your Reservation is Confirmed!'
             template = 'reservation_confirmed.html'
-        elif status == 'cancelled':
-            subject = 'Your Reservation has been Cancelled'
+        elif status == 'canceled':
+            subject = 'Your Reservation has been Canceled'
             template = 'reservation_cancelled.html'
         else:
             logger.warning(f'Email not sent for reservation {reservation_id} - status {status} not supported')
@@ -138,8 +138,8 @@ def send_reservation_status_email_direct(user_email, user_name, reservation_id, 
     if status == 'confirmed':
         subject = 'Your Reservation is Confirmed!'
         template = 'reservation_confirmed.html'
-    elif status == 'cancelled':
-        subject = 'Your Reservation has been Cancelled'
+    elif status == 'canceled':
+        subject = 'Your Reservation has been Canceled'
         template = 'reservation_cancelled.html'
     else:
         return False

@@ -89,7 +89,7 @@ const ReservationsManagement = () => {
               <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
               <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="canceled">Canceled</option>
             </select>
             <span className="text-sm text-gray-500">
               Showing {reservations.length} reservations

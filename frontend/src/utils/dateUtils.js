@@ -3,10 +3,12 @@
  */
 export const formatDateToDDMMYYYY = (date) => {
   if (!date) return '';
-  const dateObj = new Date(date);
   
-  // Let the browser use its local timezone since Django now matches
-  return dateObj.toLocaleDateString('en-GB');
+  // Parse the ISO date string directly to avoid timezone issues
+  const dateStr = date.split('T')[0]; // Get just the date part
+  const [year, month, day] = dateStr.split('-');
+  
+  return `${day}/${month}/${year}`;
 };
 
 /**
@@ -47,9 +49,11 @@ export const convertToBackendDate = (ddmmyyyy) => {
  */
 export const convertFromBackendDate = (backendDate) => {
   if (!backendDate) return '';
-  const dateObj = new Date(backendDate);
-  const day = dateObj.getDate().toString().padStart(2, '0');
-  const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-  const year = dateObj.getFullYear();
+  
+  // Parse the ISO date string directly to avoid timezone issues
+  // Expected format: "2026-01-02T03:44:00" or "2026-01-02T03:44:00.000Z"
+  const dateStr = backendDate.split('T')[0]; // Get just the date part
+  const [year, month, day] = dateStr.split('-');
+  
   return `${day}/${month}/${year}`;
 };
