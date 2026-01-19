@@ -13,7 +13,13 @@ const EditReservationForm = ({ reservation, onSubmit, onCancel }) => {
     if (reservation) {
       const startTime = new Date(reservation.start_time);
       const formattedDate = convertFromBackendDate(reservation.start_time);
-      const time = startTime.toTimeString().slice(0, 5);
+      
+      // Format time properly using local timezone
+      const time = startTime.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
       
       setFormData({
         date: formattedDate,
@@ -29,13 +35,13 @@ const EditReservationForm = ({ reservation, onSubmit, onCancel }) => {
     try {
       const backendDate = convertToBackendDate(formData.date);
       
-      // Create datetime string without timezone conversion
-      const startDateTime = `${backendDate}T${formData.time}:00`;
+      // Create timezone-aware datetime strings for Europe/Berlin timezone
+      const startDateTime = `${backendDate}T${formData.time}:00+01:00`;
       
       // For end time, add 1 hour to the time string directly
       const [hours, minutes] = formData.time.split(':');
       const endHour = (parseInt(hours) + 1).toString().padStart(2, '0');
-      const endDateTime = `${backendDate}T${endHour}:${minutes}:00`;
+      const endDateTime = `${backendDate}T${endHour}:${minutes}:00+01:00`;
       
       const updateData = {
         start_time: startDateTime,

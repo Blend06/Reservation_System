@@ -26,7 +26,7 @@ def send_email_direct(subject, template, context, recipient_list):
         return False
 
 @shared_task
-def send_reservation_status_email(user_email, user_name, reservation_id, status, reservation_date, reservation_time):
+def send_reservation_status_email(user_email, user_name, reservation_id, status, reservation_date, reservation_time, business_name, business_email):
     """
     Send email notification when reservation status changes to confirmed or canceled
     """
@@ -34,10 +34,10 @@ def send_reservation_status_email(user_email, user_name, reservation_id, status,
         logger.info(f'Starting email task for reservation {reservation_id} with status {status} to {user_email}')
         
         if status == 'confirmed':
-            subject = 'Your Reservation is Confirmed!'
+            subject = f'Your Reservation is Confirmed! - {business_name}'
             template = 'reservation_confirmed.html'
         elif status == 'canceled':
-            subject = 'Your Reservation has been Canceled'
+            subject = f'Your Reservation has been Canceled - {business_name}'
             template = 'reservation_cancelled.html'
         else:
             logger.warning(f'Email not sent for reservation {reservation_id} - status {status} not supported')
@@ -58,16 +58,20 @@ def send_reservation_status_email(user_email, user_name, reservation_id, status,
             'reservation_id': reservation_id,
             'reservation_date': reservation_date,
             'reservation_time': reservation_time,
-            'status': status
+            'status': status,
+            'business_name': business_name
         })
         
         logger.info(f'Template rendered successfully for {template}')
+        
+        # Send email from business email or default
+        from_email = business_email if business_email else settings.DEFAULT_FROM_EMAIL
         
         # Send email
         result = send_mail(
             subject=subject,
             message='',  
-            from_email=settings.DEFAULT_FROM_EMAIL,
+            from_email=from_email,
             recipient_list=[user_email],
             html_message=html_message,
             fail_silently=False,
@@ -85,19 +89,14 @@ def send_reservation_status_email(user_email, user_name, reservation_id, status,
         raise e
 
 @shared_task
-def send_new_reservation_admin_notification(customer_name, customer_email, reservation_id, reservation_date, reservation_time):
+def send_new_reservation_admin_notification(customer_name, customer_email, reservation_id, reservation_date, reservation_time, business_name, admin_email):
     """
-    Send email notification to admin when a new reservation is created
+    Send email notification to business admin when a new reservation is created
     """
     try:
-        logger.info(f'Starting admin notification for reservation {reservation_id}')
+        logger.info(f'Starting admin notification for reservation {reservation_id} to {admin_email}')
         
-        # Check admin email configuration
-        if not settings.ADMIN_EMAIL:
-            logger.error('ADMIN_EMAIL not configured')
-            raise Exception('Email configuration missing: ADMIN_EMAIL')
-        
-        subject = f'🔔 New Reservation #{reservation_id} - Action Required'
+        subject = f'🔔 New Reservation #{reservation_id} - {business_name}'
         template = 'new_reservation_admin.html'
         
         # Render HTML email template
@@ -107,16 +106,17 @@ def send_new_reservation_admin_notification(customer_name, customer_email, reser
             'reservation_id': reservation_id,
             'reservation_date': reservation_date,
             'reservation_time': reservation_time,
+            'business_name': business_name,
         })
         
         logger.info(f'Admin template rendered successfully')
         
-        # Send email to admin
+        # Send email to business admin
         result = send_mail(
             subject=subject,
             message='',  
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[settings.ADMIN_EMAIL],
+            recipient_list=[admin_email],
             html_message=html_message,
             fail_silently=False,
         )
@@ -133,13 +133,13 @@ def send_new_reservation_admin_notification(customer_name, customer_email, reser
         raise e
 
 # Direct email functions (fallback when Celery fails)
-def send_reservation_status_email_direct(user_email, user_name, reservation_id, status, reservation_date, reservation_time):
+def send_reservation_status_email_direct(user_email, user_name, reservation_id, status, reservation_date, reservation_time, business_name, business_email):
     """Direct email sending for reservation status changes"""
     if status == 'confirmed':
-        subject = 'Your Reservation is Confirmed!'
+        subject = f'Your Reservation is Confirmed! - {business_name}'
         template = 'reservation_confirmed.html'
     elif status == 'canceled':
-        subject = 'Your Reservation has been Canceled'
+        subject = f'Your Reservation has been Canceled - {business_name}'
         template = 'reservation_cancelled.html'
     else:
         return False
@@ -149,14 +149,16 @@ def send_reservation_status_email_direct(user_email, user_name, reservation_id, 
         'reservation_id': reservation_id,
         'reservation_date': reservation_date,
         'reservation_time': reservation_time,
-        'status': status
+        'status': status,
+        'business_name': business_name
     }
     
-    return send_email_direct(subject, template, context, [user_email])
+    from_email = business_email if business_email else settings.DEFAULT_FROM_EMAIL
+    return send_email_direct(subject, template, context, [user_email], from_email)
 
-def send_new_reservation_admin_notification_direct(customer_name, customer_email, reservation_id, reservation_date, reservation_time):
+def send_new_reservation_admin_notification_direct(customer_name, customer_email, reservation_id, reservation_date, reservation_time, business_name, admin_email):
     """Direct email sending for admin notifications"""
-    subject = f'🔔 New Reservation #{reservation_id} - Action Required'
+    subject = f'🔔 New Reservation #{reservation_id} - {business_name}'
     template = 'new_reservation_admin.html'
     
     context = {
@@ -165,9 +167,29 @@ def send_new_reservation_admin_notification_direct(customer_name, customer_email
         'reservation_id': reservation_id,
         'reservation_date': reservation_date,
         'reservation_time': reservation_time,
+        'business_name': business_name,
     }
     
-    return send_email_direct(subject, template, context, [settings.ADMIN_EMAIL])
+    return send_email_direct(subject, template, context, [admin_email])
+
+def send_email_direct(subject, template, context, recipient_list, from_email=None):
+    """
+    Send email directly (fallback when Celery fails)
+    """
+    try:
+        html_message = render_to_string(template, context)
+        result = send_mail(
+            subject=subject,
+            message='',
+            from_email=from_email or settings.DEFAULT_FROM_EMAIL,
+            recipient_list=recipient_list,
+            html_message=html_message,
+            fail_silently=False,
+        )
+        return result > 0
+    except Exception as e:
+        logger.error(f'Direct email failed: {str(e)}')
+        return False
 
 @shared_task
 def test_email_configuration():

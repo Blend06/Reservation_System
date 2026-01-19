@@ -2,11 +2,13 @@ export const createReservationData = (date, time) => {
   const [day, month, year] = date.split('/');
   const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   
-  const startDateTime = `${formattedDate}T${time}:00`;
+  // Create timezone-aware datetime strings for Europe/Berlin timezone
+  // This ensures the backend receives the exact time the user intended
+  const startDateTime = `${formattedDate}T${time}:00+01:00`;
   
   const [hours, minutes] = time.split(':');
   const endHour = (parseInt(hours) + 1).toString().padStart(2, '0');
-  const endDateTime = `${formattedDate}T${endHour}:${minutes}:00`;
+  const endDateTime = `${formattedDate}T${endHour}:${minutes}:00+01:00`;
   
   return {
     start_time: startDateTime,
@@ -38,11 +40,17 @@ export const formatReservationDate = (dateTime) => {
 };
 
 export const formatReservationTime = (dateTime) => {
-  const timeStr = dateTime.split('T')[1];
-  const [hours, minutes] = timeStr.split(':');
-  const hour12 = parseInt(hours) % 12 || 12;
-  const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
-  return `${hour12.toString().padStart(2, '0')}:${minutes} ${ampm}`;
+  if (!dateTime) return '';
+  
+  // Create a proper Date object to handle timezone conversion
+  const date = new Date(dateTime);
+  
+  // Format using browser's local timezone (which should match Europe/Berlin)
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
 };
 
 export const formatCreatedDate = (dateTime) => {

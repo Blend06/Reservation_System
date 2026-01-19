@@ -18,7 +18,7 @@ def store_old_status(sender, instance, **kwargs):
     """Store the old status before saving to detect changes"""
     if instance.pk:  # Only for existing reservations
         try:
-            old_instance = Reservation.objects.get(pk=instance.pk)
+            old_instance = Reservation.all_objects.get(pk=instance.pk)
             _reservation_old_status[instance.pk] = old_instance.status
         except Reservation.DoesNotExist:
             _reservation_old_status[instance.pk] = None
@@ -29,49 +29,59 @@ def store_old_status(sender, instance, **kwargs):
 def handle_reservation_changes(sender, instance, created, **kwargs):
     """
     Send email notifications:
-    - To admin when new reservation is created
+    - To business admin when new reservation is created
     - To customer when status changes to confirmed/canceled
     """
     try:
-        # Get user information
-        user = instance.customer
-        user_email = user.email
-        user_name = f"{user.first_name} {user.last_name}".strip() or user.username
+        # Get business and customer information
+        business = instance.business
+        customer_name = instance.customer_display_name
+        customer_email = instance.customer_display_email
         
-        # Format date and time (convert to local timezone for display)
+        if not customer_email:
+            logger.warning(f'No customer email for reservation {instance.id}')
+            return
+        
+        # Format date and time (convert to business timezone for display)
         from django.utils import timezone
         import pytz
         
-        # Convert UTC time to Central European Time for display
-        # You can change this to your preferred timezone
-        local_tz = pytz.timezone('Europe/Berlin')  # CET/CEST
-        local_time = instance.start_time.astimezone(local_tz)
+        # Convert UTC time to business timezone for display
+        business_tz = pytz.timezone(business.timezone)
+        local_time = instance.start_time.astimezone(business_tz)
             
         reservation_date = local_time.strftime('%B %d, %Y')
         reservation_time = local_time.strftime('%I:%M %p')
         
         if created:  # New reservation created
-            logger.info(f'New reservation {instance.id} created, sending admin notification')
+            logger.info(f'New reservation {instance.id} created for business {business.name}')
+            
+            # Send notification to business admin
+            admin_email = business.admin_email
             
             # Try Celery first, fallback to direct email
             try:
                 send_new_reservation_admin_notification.delay(
-                    customer_name=user_name,
-                    customer_email=user_email,
+                    customer_name=customer_name,
+                    customer_email=customer_email,
                     reservation_id=instance.id,
                     reservation_date=reservation_date,
-                    reservation_time=reservation_time
+                    reservation_time=reservation_time,
+                    business_name=business.name,
+                    admin_email=admin_email
                 )
                 logger.info(f'Admin notification queued via Celery for reservation {instance.id}')
             except Exception as celery_error:
                 logger.warning(f'Celery failed for admin notification, using direct email: {celery_error}')
                 # Fallback to direct email
                 success = send_new_reservation_admin_notification_direct(
-                    customer_name=user_name,
-                    customer_email=user_email,
+                    customer_name=customer_name,
+                    customer_email=customer_email,
                     reservation_id=instance.id,
                     reservation_date=reservation_date,
-                    reservation_time=reservation_time
+                    reservation_time=reservation_time,
+                    business_name=business.name,
+                    admin_email=admin_email
                 )
                 if success:
                     logger.info(f'Admin notification sent directly for reservation {instance.id}')
@@ -94,24 +104,28 @@ def handle_reservation_changes(sender, instance, created, **kwargs):
                     # Try Celery first, fallback to direct email
                     try:
                         send_reservation_status_email.delay(
-                            user_email=user_email,
-                            user_name=user_name,
+                            user_email=customer_email,
+                            user_name=customer_name,
                             reservation_id=instance.id,
                             status=current_status,
                             reservation_date=reservation_date,
-                            reservation_time=reservation_time
+                            reservation_time=reservation_time,
+                            business_name=business.name,
+                            business_email=business.admin_email
                         )
                         logger.info(f'Customer email queued via Celery for reservation {instance.id}')
                     except Exception as celery_error:
                         logger.warning(f'Celery failed for customer email, using direct email: {celery_error}')
                         # Fallback to direct email
                         success = send_reservation_status_email_direct(
-                            user_email=user_email,
-                            user_name=user_name,
+                            user_email=customer_email,
+                            user_name=customer_name,
                             reservation_id=instance.id,
                             status=current_status,
                             reservation_date=reservation_date,
-                            reservation_time=reservation_time
+                            reservation_time=reservation_time,
+                            business_name=business.name,
+                            business_email=business.admin_email
                         )
                         if success:
                             logger.info(f'Customer email sent directly for reservation {instance.id}')

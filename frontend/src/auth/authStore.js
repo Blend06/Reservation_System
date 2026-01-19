@@ -93,6 +93,14 @@ export const AuthProvider = ({ children }) => {
     return user?.is_admin || false;
   };
 
+  const isSuperAdmin = () => {
+    return user?.is_super_admin || false;
+  };
+
+  const isBusinessOwner = () => {
+    return user?.is_business_owner || false;
+  };
+
   const value = {
     user,
     token,
@@ -101,7 +109,9 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     isAuthenticated,
-    isAdmin
+    isAdmin,
+    isSuperAdmin,
+    isBusinessOwner
   };
 
   return (
