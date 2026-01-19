@@ -1,6 +1,22 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=fade_district_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:7-alpine
     ports:
@@ -18,8 +34,16 @@ services:
     environment:
       - DEBUG=1
       - REDIS_URL=redis://redis:6379/0
+      - DB_NAME=fade_district_db
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_HOST=postgres
+      - DB_PORT=5432
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: >
@@ -34,9 +58,18 @@ services:
     environment:
       - DEBUG=1
       - REDIS_URL=redis://redis:6379/0
+      - DB_NAME=fade_district_db
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_HOST=postgres
+      - DB_PORT=5432
     depends_on:
-      - redis
-      - backend
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      backend:
+        condition: service_started
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: >
@@ -51,9 +84,18 @@ services:
     environment:
       - DEBUG=1
       - REDIS_URL=redis://redis:6379/0
+      - DB_NAME=fade_district_db
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_HOST=postgres
+      - DB_PORT=5432
     depends_on:
-      - redis
-      - backend
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      backend:
+        condition: service_started
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: >
@@ -73,4 +115,5 @@ services:
     command: npm start
 
 volumes:
+  postgres_data:
   redis_data:
