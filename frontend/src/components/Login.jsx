@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/authStore';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -12,12 +12,14 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const userData = await login(username, password);
+      const userData = await login(email, password);
       // Navigate based on user role from returned data
-      if (userData.is_admin) {
-        navigate('/dashboard');
+      if (userData.user_type === 'super_admin') {
+        navigate('/superadmin');
+      } else if (userData.user_type === 'business_owner') {
+        navigate('/business');
       } else {
-        navigate('/homepage');
+        navigate('/dashboard');
       }
     } catch (err) {
       setError('Login failed. Please check your credentials.');
@@ -32,10 +34,10 @@ const Login = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition duration-200"
             />
