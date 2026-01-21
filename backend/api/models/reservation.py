@@ -21,8 +21,8 @@ class Reservation(models.Model):
     
     # Customer info (no user account needed)
     customer_name = models.CharField(max_length=100, help_text="Customer's full name")
-    customer_email = models.EmailField(help_text="Customer's email address")
-    customer_phone = models.CharField(max_length=20, blank=True, help_text="Customer's phone number")
+    customer_email = models.EmailField(blank=True, help_text="Customer's email address (optional)")
+    customer_phone = models.CharField(max_length=20, help_text="Customer's phone number")
     
     # Reservation details
     start_time = models.DateTimeField()
@@ -53,7 +53,7 @@ class Reservation(models.Model):
         indexes = [
             models.Index(fields=['business', 'status']),
             models.Index(fields=['business', 'start_time']),
-            models.Index(fields=['customer_email']),
+            models.Index(fields=['customer_phone']),
         ]
 
     def __str__(self):

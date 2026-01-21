@@ -89,7 +89,7 @@ def send_reservation_status_email(user_email, user_name, reservation_id, status,
         raise e
 
 @shared_task
-def send_new_reservation_admin_notification(customer_name, customer_email, reservation_id, reservation_date, reservation_time, business_name, admin_email):
+def send_new_reservation_admin_notification(customer_name, customer_phone, reservation_id, reservation_date, reservation_time, business_name, admin_email):
     """
     Send email notification to business admin when a new reservation is created
     """
@@ -102,7 +102,7 @@ def send_new_reservation_admin_notification(customer_name, customer_email, reser
         # Render HTML email template
         html_message = render_to_string(template, {
             'customer_name': customer_name,
-            'customer_email': customer_email,
+            'customer_phone': customer_phone,
             'reservation_id': reservation_id,
             'reservation_date': reservation_date,
             'reservation_time': reservation_time,
@@ -156,14 +156,14 @@ def send_reservation_status_email_direct(user_email, user_name, reservation_id, 
     from_email = business_email if business_email else settings.DEFAULT_FROM_EMAIL
     return send_email_direct(subject, template, context, [user_email], from_email)
 
-def send_new_reservation_admin_notification_direct(customer_name, customer_email, reservation_id, reservation_date, reservation_time, business_name, admin_email):
+def send_new_reservation_admin_notification_direct(customer_name, customer_phone, reservation_id, reservation_date, reservation_time, business_name, admin_email):
     """Direct email sending for admin notifications"""
     subject = f'🔔 New Reservation #{reservation_id} - {business_name}'
     template = 'new_reservation_admin.html'
     
     context = {
         'customer_name': customer_name,
-        'customer_email': customer_email,
+        'customer_phone': customer_phone,
         'reservation_id': reservation_id,
         'reservation_date': reservation_date,
         'reservation_time': reservation_time,
