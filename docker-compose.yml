@@ -6,7 +6,7 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=fade_district_db
+      - POSTGRES_DB=reservation_db
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
     volumes:
@@ -34,7 +34,7 @@ services:
     environment:
       - DEBUG=1
       - REDIS_URL=redis://redis:6379/0
-      - DB_NAME=fade_district_db
+      - DB_NAME=reservation_db
       - DB_USER=postgres
       - DB_PASSWORD=password
       - DB_HOST=postgres
@@ -58,7 +58,7 @@ services:
     environment:
       - DEBUG=1
       - REDIS_URL=redis://redis:6379/0
-      - DB_NAME=fade_district_db
+      - DB_NAME=reservation_db
       - DB_USER=postgres
       - DB_PASSWORD=password
       - DB_HOST=postgres
@@ -84,7 +84,7 @@ services:
     environment:
       - DEBUG=1
       - REDIS_URL=redis://redis:6379/0
-      - DB_NAME=fade_district_db
+      - DB_NAME=reservation_db
       - DB_USER=postgres
       - DB_PASSWORD=password
       - DB_HOST=postgres
