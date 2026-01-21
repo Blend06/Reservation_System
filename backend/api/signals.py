@@ -30,16 +30,16 @@ def handle_reservation_changes(sender, instance, created, **kwargs):
     """
     Send email notifications:
     - To business admin when new reservation is created
-    - To customer when status changes to confirmed/canceled
+    - No customer emails (customers are contacted via phone)
     """
     try:
         # Get business and customer information
         business = instance.business
         customer_name = instance.customer_display_name
-        customer_email = instance.customer_display_email
+        customer_phone = instance.customer_phone
         
-        if not customer_email:
-            logger.warning(f'No customer email for reservation {instance.id}')
+        if not customer_phone:
+            logger.warning(f'No customer phone for reservation {instance.id}')
             return
         
         # Format date and time (convert to business timezone for display)
@@ -56,14 +56,14 @@ def handle_reservation_changes(sender, instance, created, **kwargs):
         if created:  # New reservation created
             logger.info(f'New reservation {instance.id} created for business {business.name}')
             
-            # Send notification to business admin
+            # Send notification to business admin only
             admin_email = business.admin_email
             
             # Try Celery first, fallback to direct email
             try:
                 send_new_reservation_admin_notification.delay(
                     customer_name=customer_name,
-                    customer_email=customer_email,
+                    customer_phone=customer_phone,
                     reservation_id=instance.id,
                     reservation_date=reservation_date,
                     reservation_time=reservation_time,
@@ -76,7 +76,7 @@ def handle_reservation_changes(sender, instance, created, **kwargs):
                 # Fallback to direct email
                 success = send_new_reservation_admin_notification_direct(
                     customer_name=customer_name,
-                    customer_email=customer_email,
+                    customer_phone=customer_phone,
                     reservation_id=instance.id,
                     reservation_date=reservation_date,
                     reservation_time=reservation_time,
@@ -88,53 +88,10 @@ def handle_reservation_changes(sender, instance, created, **kwargs):
                 else:
                     logger.error(f'Direct admin notification failed for reservation {instance.id}')
             
-        else:  # Existing reservation updated
-            # Get the old status
-            old_status = _reservation_old_status.get(instance.pk)
-            current_status = instance.status
-            
-            # Check if status actually changed
-            if old_status != current_status:
-                logger.info(f'Reservation {instance.id} status changed from {old_status} to {current_status}')
-                
-                # Send email for confirmed or canceled status
-                if current_status in ['confirmed', 'canceled']:
-                    logger.info(f'Sending customer email for reservation {instance.id} with status {current_status}')
-                    
-                    # Try Celery first, fallback to direct email
-                    try:
-                        send_reservation_status_email.delay(
-                            user_email=customer_email,
-                            user_name=customer_name,
-                            reservation_id=instance.id,
-                            status=current_status,
-                            reservation_date=reservation_date,
-                            reservation_time=reservation_time,
-                            business_name=business.name,
-                            business_email=business.admin_email
-                        )
-                        logger.info(f'Customer email queued via Celery for reservation {instance.id}')
-                    except Exception as celery_error:
-                        logger.warning(f'Celery failed for customer email, using direct email: {celery_error}')
-                        # Fallback to direct email
-                        success = send_reservation_status_email_direct(
-                            user_email=customer_email,
-                            user_name=customer_name,
-                            reservation_id=instance.id,
-                            status=current_status,
-                            reservation_date=reservation_date,
-                            reservation_time=reservation_time,
-                            business_name=business.name,
-                            business_email=business.admin_email
-                        )
-                        if success:
-                            logger.info(f'Customer email sent directly for reservation {instance.id}')
-                        else:
-                            logger.error(f'Direct customer email failed for reservation {instance.id}')
-            
-            # Clean up the stored status
-            if instance.pk in _reservation_old_status:
-                del _reservation_old_status[instance.pk]
+        # Note: No customer email notifications - business will contact customer via phone
+        # Clean up the stored status
+        if instance.pk in _reservation_old_status:
+            del _reservation_old_status[instance.pk]
                 
     except Exception as e:
         logger.error(f'Failed to process reservation {instance.id}: {str(e)}')

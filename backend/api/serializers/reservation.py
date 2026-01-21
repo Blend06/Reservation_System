@@ -46,20 +46,20 @@ class PublicReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
         fields = [
-            'customer_name', 'customer_email', 'customer_phone',
+            'customer_name', 'customer_phone',
             'start_time', 'end_time', 'notes'
         ]
-    
-    def validate_customer_email(self, value):
-        """Validate email format"""
-        if not value:
-            raise serializers.ValidationError("Email is required")
-        return value.lower()
     
     def validate_customer_name(self, value):
         """Validate customer name"""
         if not value or len(value.strip()) < 2:
             raise serializers.ValidationError("Valid name is required")
+        return value.strip()
+    
+    def validate_customer_phone(self, value):
+        """Validate phone number"""
+        if not value or len(value.strip()) < 8:
+            raise serializers.ValidationError("Valid phone number is required")
         return value.strip()
 
 class ReservationListSerializer(serializers.ModelSerializer):

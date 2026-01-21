@@ -1,4 +1,5 @@
 from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from api.models import Reservation, Business
@@ -43,7 +44,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
         
         if tenant:
             # Subdomain context - create reservation for this business
-            serializer.save(business=tenant)
+            serializer.save(business=tenant, status='pending')
         else:
             # Main domain context - require authentication and business
             if not self.request.user.is_authenticated:
@@ -102,3 +103,32 @@ class ReservationViewSet(viewsets.ModelViewSet):
             instance.delete()
         else:
             raise PermissionError("Permission denied")
+
+    @action(detail=False, methods=['post'], permission_classes=[])
+    def lookup(self, request):
+        """Allow customers to look up their reservations by phone number"""
+        phone = request.data.get('phone')
+        tenant = get_current_tenant()
+        
+        if not phone:
+            return Response(
+                {'error': 'Phone number is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not tenant:
+            return Response(
+                {'error': 'Business context required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        reservations = Reservation.objects.filter(
+            business=tenant,
+            customer_phone=phone
+        ).order_by('-created_at')
+        
+        serializer = self.get_serializer(reservations, many=True)
+        return Response({
+            'reservations': serializer.data,
+            'business_name': tenant.name
+        })
