@@ -19,7 +19,7 @@ const Login = () => {
       } else if (userData.user_type === 'business_owner') {
         navigate('/business');
       } else {
-        navigate('/dashboard');
+        navigate('/superadmin');
       }
     } catch (err) {
       setError('Login failed. Please check your credentials.');

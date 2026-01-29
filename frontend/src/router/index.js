@@ -2,7 +2,6 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from '../components/Login';
 import Register from '../components/Register';
 import Reservations from '../components/Reservations';
-import Dashboard from '../components/Dashboard';
 import Homepage from '../components/Homepage';
 import UsersManagement from '../components/admin/UsersManagement';
 import ReservationsManagement from '../components/admin/ReservationsManagement';
@@ -21,7 +20,7 @@ const isSubdomain = () => {
 
 const ProtectedRoute = ({ children, adminOnly = false, superAdminOnly = false, businessOwnerOnly = false }) => {
   const { isAuthenticated, user, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -29,23 +28,29 @@ const ProtectedRoute = ({ children, adminOnly = false, superAdminOnly = false, b
       </div>
     );
   }
-  
+
   if (!isAuthenticated()) {
     return <Navigate to="/login" />;
   }
-  
-  if (superAdminOnly && !user?.is_super_admin) {
-    return <Navigate to="/login" />;
+
+  // Super admin sees only /superadmin – business owner sent to their dashboard
+  if (superAdminOnly) {
+    if (user?.is_business_owner) return <Navigate to="/business" replace />;
+    if (!user?.is_super_admin) return <Navigate to="/login" />;
+    return children;
   }
-  
-  if (businessOwnerOnly && !user?.is_business_owner) {
-    return <Navigate to="/login" />;
+
+  // Business owner sees only /business – super admin sent to their dashboard
+  if (businessOwnerOnly) {
+    if (user?.is_super_admin) return <Navigate to="/superadmin" replace />;
+    if (!user?.is_business_owner) return <Navigate to="/login" />;
+    return children;
   }
-  
+
   if (adminOnly && !user?.is_admin) {
     return <Navigate to="/login" />;
   }
-  
+
   return children;
 };
 
@@ -120,12 +125,15 @@ const AppRoutes = () => {
         } 
       />
       
+      {/* /dashboard removed – redirect to correct dashboard */}
       <Route 
         path="/dashboard" 
         element={
-          <ProtectedRoute adminOnly={true}>
-            <Dashboard />
-          </ProtectedRoute>
+          isAuthenticated() ? (
+            user?.is_super_admin ? <Navigate to="/superadmin" replace /> :
+            user?.is_business_owner ? <Navigate to="/business" replace /> :
+            <Navigate to="/superadmin" replace />
+          ) : <Navigate to="/login" replace />
         } 
       />
       
@@ -163,7 +171,7 @@ const AppRoutes = () => {
           isAuthenticated() ? 
             (user?.is_super_admin ? <Navigate to="/superadmin" /> :
              user?.is_business_owner ? <Navigate to="/business" /> :
-             user?.is_admin ? <Navigate to="/dashboard" /> :
+             user?.is_admin ? <Navigate to="/superadmin" /> :
              <Navigate to="/homepage" />) :
             <Navigate to="/login" />
         } 

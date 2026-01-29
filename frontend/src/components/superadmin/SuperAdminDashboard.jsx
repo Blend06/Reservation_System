@@ -46,8 +46,8 @@ const SuperAdminDashboard = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Super Admin Dashboard</h1>
-              <p className="text-gray-600">Manage all businesses and system overview</p>
+              <h1 className="text-2xl font-bold text-gray-900">My Dashboard</h1>
+              <p className="text-gray-600">Manage your clients (their businesses) on the platform</p>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Welcome, {user?.first_name}</span>
@@ -66,27 +66,27 @@ const SuperAdminDashboard = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
-            title="Total Businesses"
+            title="My clients (businesses)"
             value={stats?.total_businesses || 0}
             icon="🏢"
             color="bg-blue-500"
             onClick={() => navigate('/superadmin/businesses')}
           />
           <StatCard
-            title="Active Businesses"
+            title="Active businesses"
             value={stats?.active_businesses || 0}
             icon="✅"
             color="bg-green-500"
             onClick={() => navigate('/superadmin/businesses')}
           />
           <StatCard
-            title="Total Users"
+            title="Business owners"
             value={stats?.total_users || 0}
-            icon="👥"
+            icon="👤"
             color="bg-purple-500"
           />
           <StatCard
-            title="Total Reservations"
+            title="Reservations (all)"
             value={stats?.total_reservations || 0}
             icon="📅"
             color="bg-orange-500"
@@ -96,15 +96,15 @@ const SuperAdminDashboard = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Recent Businesses */}
+          {/* Recent clients (businesses) */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">Recent Businesses</h2>
+              <h2 className="text-xl font-semibold text-gray-800">Recent clients (businesses)</h2>
               <button
                 onClick={() => navigate('/superadmin/businesses')}
                 className="text-blue-600 hover:text-blue-800 text-sm font-medium"
               >
-                View All
+                View all
               </button>
             </div>
             <div className="space-y-3">
@@ -128,28 +128,28 @@ const SuperAdminDashboard = () => {
 
           {/* Quick Actions */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick actions</h2>
             <div className="space-y-3">
               <ActionButton
-                title="Create New Business"
-                description="Add a new business to the platform"
-                icon="➕"
-                onClick={() => navigate('/superadmin/businesses/create')}
-              />
-              <ActionButton
-                title="Manage Businesses"
-                description="View and manage all businesses"
+                title="Manage my clients (businesses)"
+                description="View and manage all client businesses"
                 icon="🏢"
                 onClick={() => navigate('/superadmin/businesses')}
               />
               <ActionButton
-                title="View All Reservations"
-                description="Monitor reservations across all businesses"
+                title="Add new client (business)"
+                description="Create a new business on the platform"
+                icon="➕"
+                onClick={() => navigate('/superadmin/businesses/create')}
+              />
+              <ActionButton
+                title="View all reservations"
+                description="Reservations across all client businesses"
                 icon="📊"
                 onClick={() => navigate('/superadmin/reservations')}
               />
               <ActionButton
-                title="System Settings"
+                title="System settings"
                 description="Configure global system settings"
                 icon="⚙️"
                 onClick={() => navigate('/superadmin/settings')}

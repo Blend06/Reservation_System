@@ -45,17 +45,23 @@ class BusinessCreateSerializer(BusinessSerializer):
         ]
 
 class BusinessListSerializer(serializers.ModelSerializer):
-    """Simplified serializer for listing businesses"""
+    """Full serializer for listing businesses (all attributes for dashboard table)"""
     
     full_domain = serializers.ReadOnlyField()
+    admin_email = serializers.ReadOnlyField()
     user_count = serializers.SerializerMethodField()
     reservation_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Business
         fields = [
-            'id', 'name', 'subdomain', 'full_domain', 'email',
-            'is_active', 'subscription_status', 'created_at',
+            'id', 'name', 'subdomain', 'full_domain',
+            'email', 'phone',
+            'business_hours_start', 'business_hours_end', 'timezone',
+            'email_from_name', 'email_from_address', 'admin_email',
+            'primary_color', 'logo_url',
+            'is_active', 'subscription_status', 'subscription_expires',
+            'created_at', 'updated_at',
             'user_count', 'reservation_count'
         ]
     
