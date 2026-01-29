@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from '../components/Login';
 import Register from '../components/Register';
 import Reservations from '../components/Reservations';
@@ -51,8 +51,11 @@ const ProtectedRoute = ({ children, adminOnly = false, superAdminOnly = false, b
 
 const AppRoutes = () => {
   const { isAuthenticated, user, loading } = useAuth();
-  
-  if (loading) {
+  const location = useLocation();
+  const isBookPath = location.pathname === '/book' || location.pathname === '/book/' || location.pathname.startsWith('/book/');
+
+  // Don't block /book or /book/:subdomain on auth loading – render routes so React Router can match
+  if (loading && !isBookPath) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
@@ -74,6 +77,10 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      {/* Public booking – /book and /book/ redirect to /book/testsalon */}
+      <Route path="/book" element={<Navigate to="/book/testsalon" replace />} />
+      <Route path="/book/" element={<Navigate to="/book/testsalon" replace />} />
+      <Route path="/book/:subdomain" element={<PublicBooking />} />
       
       {/* Super Admin Routes */}
       <Route 
@@ -161,6 +168,8 @@ const AppRoutes = () => {
             <Navigate to="/login" />
         } 
       />
+      {/* Catch-all so "No routes matched" never appears in console */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 };

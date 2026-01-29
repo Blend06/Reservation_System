@@ -1,3 +1,16 @@
+/**
+ * Get business subdomain from current host (e.g. companyA from companyA.domain.com or companyA.localhost).
+ * Used so the API can assign the reservation to the correct business when API is on a different host.
+ */
+export const getSubdomainFromHost = () => {
+  const host = typeof window !== 'undefined' ? window.location.hostname : '';
+  const parts = host.split('.');
+  if (parts.length >= 2 && parts[0] !== 'www' && parts[0] !== 'localhost') {
+    return parts[0];
+  }
+  return null;
+};
+
 export const createReservationData = (date, time) => {
   const [day, month, year] = date.split('/');
   const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;

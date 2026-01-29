@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import api from '../../api/axios';
 import { LoadingSpinner } from '../ui';
 import DateTimeInput from '../forms/DateTimeInput';
-import { createReservationData } from '../../utils/reservationUtils';
+import { createReservationData, getSubdomainFromHost } from '../../utils/reservationUtils';
 
 const PublicBooking = () => {
+  const { subdomain: subdomainFromUrl } = useParams();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -12,7 +14,7 @@ const PublicBooking = () => {
   const [showLookup, setShowLookup] = useState(false);
   const [lookupEmail, setLookupEmail] = useState('');
   const [lookupResults, setLookupResults] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     customer_name: '',
     customer_phone: '',
@@ -29,13 +31,15 @@ const PublicBooking = () => {
     try {
       // Create reservation data with timezone
       const reservationData = createReservationData(formData.date, formData.time);
-      
-      // Add customer information
+      const subdomain = subdomainFromUrl || getSubdomainFromHost();
+
+      // Add customer information and subdomain (so backend can assign business without login)
       const fullReservationData = {
         ...reservationData,
         customer_name: formData.customer_name,
         customer_phone: formData.customer_phone,
-        notes: formData.notes
+        notes: formData.notes,
+        ...(subdomain && { subdomain }),
       };
 
       await api.post('reservations/', fullReservationData);
