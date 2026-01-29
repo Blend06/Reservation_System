@@ -19,8 +19,9 @@ This document outlines the complete transformation of a single-tenant reservatio
    - Configure business settings
 
 3. **Public Level** (`business.yourdomain.com`)
-   - Public booking interface for end customers
-   - No authentication required
+   - Public booking interface for end customers (simple clients)
+   - No authentication or account required: customers only submit the booking form
+   - No "view my reservations" for end customers; only business owners see reservations in their dashboard
    - Business-branded experience
 
 ## Phase 1: Database Schema & Models
@@ -116,10 +117,13 @@ class TenantAwareManager(models.Manager):
 - Activation/deactivation controls
 
 #### Multi-Tenant Reservation API (`backend/api/views/reservation.py`)
-- Automatic tenant context detection
-- Public booking (no auth required on subdomains)
-- Business owner dashboard access
-- Super admin global access
+- **No authentication required for creating reservations**: simple clients (end customers) can book without logging in.
+- Tenant resolution in two ways:
+  1. **From request Host** (when API is served on the same subdomain): middleware sets tenant from subdomain.
+  2. **From request body or header** (when API is on a different host, e.g. `api.domain.com`): frontend sends `subdomain` in the request body or `X-Subdomain` header; backend uses `get_tenant_from_request()` to resolve the business and assign the reservation.
+- Public booking: `POST /api/reservations/` with `subdomain` (and customer/data fields) does not require authentication.
+- Business owner dashboard: list/update/delete reservations (authenticated, scoped to their business).
+- Super admin: full access across all businesses.
 
 #### Enhanced Email System (`backend/api/tasks/email_tasks.py`)
 - Business-specific email templates
@@ -154,11 +158,12 @@ class TenantAwareManager(models.Manager):
 ### Public Booking Interface (`frontend/src/components/public/`)
 
 #### PublicBooking.jsx
-- No authentication required
-- Customer information collection
-- Appointment scheduling
-- Business-branded experience
-- Email confirmation system
+- No authentication required: end customers never log in.
+- Customer information: name, phone, optional notes (no account or email required for booking).
+- Appointment scheduling: date and time selection.
+- Subdomain is read from `window.location.hostname` via `getSubdomainFromHost()` and sent in the reservation request body so the backend can assign the reservation to the correct business when the API is on a different host.
+- Success screen after booking; no "view my reservations" or lookup by phone for end customers.
+- Business-branded experience and email confirmation as configured per business.
 
 ### Updated Router System (`frontend/src/router/index.js`)
 - Subdomain detection
@@ -185,10 +190,10 @@ class TenantAwareManager(models.Manager):
 - Routes: `/business/*`
 - Permissions: Manage their reservations, view their analytics
 
-#### Public Users (Subdomains)
-- Access: Public booking interface only
-- Routes: All routes on `business.yourdomain.com`
-- Permissions: Create reservations only
+#### End Customers (Public / Simple Clients)
+- Access: Public booking interface only; no login or account.
+- Routes: All routes on `business.yourdomain.com` (subdomain).
+- Permissions: Create reservations only. No access to view or manage existing reservations; only business owners see reservations in their dashboard.
 
 ## Deployment & Configuration
 
@@ -272,11 +277,11 @@ python manage.py migrate_to_multitenant \
 - `GET /api/businesses/dashboard_stats/` - Get system-wide stats
 
 ### Reservations (Multi-Tenant)
-- `GET /api/reservations/` - List reservations (filtered by context)
-- `POST /api/reservations/` - Create reservation (auto-assigns business)
-- `GET /api/reservations/{id}/` - Get reservation details
-- `PUT /api/reservations/{id}/` - Update reservation
-- `DELETE /api/reservations/{id}/` - Delete reservation
+- `GET /api/reservations/` - List reservations (filtered by context; requires authentication on main domain).
+- `POST /api/reservations/` - Create reservation. **No authentication required.** Business is assigned from tenant (Host subdomain) or from request body `subdomain` / header `X-Subdomain` when API is on a different host.
+- `GET /api/reservations/{id}/` - Get reservation details (authenticated, tenant-scoped).
+- `PUT /api/reservations/{id}/` - Update reservation (authenticated).
+- `DELETE /api/reservations/{id}/` - Delete reservation (authenticated).
 
 ## Email System
 
@@ -289,6 +294,20 @@ python manage.py migrate_to_multitenant \
 1. **New Reservation**: Email sent to business admin
 2. **Status Change**: Email sent to customer
 3. **Cancellation**: Email sent to customer
+
+## Public Booking Without Login
+
+End customers (simple clients) do not need to sign up or log in to make a reservation.
+
+1. **Customer** opens the business subdomain (e.g. `companyA.yourdomain.com`).
+2. **Frontend** shows the public booking form (no auth check). On submit, it sends the reservation data plus the current subdomain (from `window.location.hostname`) in the request body.
+3. **Backend** resolves the business (tenant) from:
+   - the request **Host** (when the API is served on the same subdomain), or
+   - the **`subdomain`** field in the request body or the **`X-Subdomain`** header (when the API is on a different host, e.g. `api.yourdomain.com`).
+4. With a valid tenant, the backend creates the reservation with **no authentication** and returns success.
+5. End customers do **not** have a "view my reservations" or lookup feature; only business owners see and manage reservations in their dashboard.
+
+For **local development**, the frontend may run at `localhost:3000` while the API runs at `localhost:8000`, so the backend does not receive a subdomain in the Host header. Use a subdomain in development (e.g. add `127.0.0.1 salon.localhost` to your hosts file and open `http://salon.localhost:3000`) so that the frontend can send the subdomain and the reservation is assigned to the correct business.
 
 ## Security & Data Isolation
 
@@ -303,6 +322,26 @@ python manage.py migrate_to_multitenant \
 - Business relationship validation
 
 ## Testing & Validation
+
+### How to Test as a Simple User (End Customer)
+
+#### Local development only
+
+When working **locally only** (no production subdomains), use the `/book/:subdomain` route. No hosts file or real subdomains are needed.
+
+1. Start backend and frontend (e.g. backend on `http://localhost:8000`, frontend on `http://localhost:3000`).
+2. Create at least one **Business** with a **subdomain** (e.g. log in as Super Admin → Businesses → create business with subdomain `salon`).
+3. **Do not log in** as a simple user (or use an incognito window).
+4. Open in the browser: **`http://localhost:3000/book/salon`** (replace `salon` with your business subdomain).
+5. You see the public booking form with no login.
+6. Fill in name, phone, date, time, optional notes → submit. The reservation is created for that business without any authentication.
+
+The frontend sends the subdomain from the URL path in the request body, so the backend assigns the reservation to the correct business even when the API is at `localhost:8000`.
+
+#### With real subdomains (e.g. production or `salon.localhost`)
+
+- Production: customers open `https://companyA.yourdomain.com` and get the same booking form.
+- Local with subdomain: add `127.0.0.1 salon.localhost` to your hosts file and open `http://salon.localhost:3000`.
 
 ### Test Scenarios
 1. **Subdomain Detection**: Verify middleware correctly identifies tenants
@@ -354,6 +393,10 @@ python manage.py test_cancel_email
 - Check business email settings
 - Test with management commands
 
+#### Reservation Creation Asks for Login or Fails
+- If the API is on a different host than the frontend (e.g. `api.domain.com` vs `companyA.domain.com`), the backend cannot get the subdomain from the Host header. Ensure the frontend sends `subdomain` in the request body or the `X-Subdomain` header when creating a reservation.
+- Check that the business exists and is active for the given subdomain.
+
 #### Data Not Isolated
 - Verify tenant middleware is working
 - Check manager implementation
@@ -375,12 +418,14 @@ python manage.py shell
 
 The multi-tenant SaaS transformation is now complete with:
 
-✅ **Full Data Isolation**: Each business has completely isolated data
-✅ **Subdomain Support**: Each business gets their own subdomain
-✅ **Three-Tier Interface**: Super Admin, Business Owner, and Public interfaces
-✅ **Email System**: Business-specific email templates and settings
-✅ **PostgreSQL**: Robust database with proper indexing
-✅ **Docker Setup**: Complete containerized deployment
-✅ **Management Commands**: Easy setup and migration tools
+✅ **Full Data Isolation**: Each business has completely isolated data  
+✅ **Subdomain Support**: Each business gets their own subdomain  
+✅ **Three-Tier Interface**: Super Admin, Business Owner, and Public interfaces  
+✅ **Public Booking Without Login**: End customers can make reservations without signing up or logging in; tenant is resolved from Host or from request body/header  
+✅ **No "View My Reservations" for End Customers**: Only business owners see and manage reservations in their dashboard  
+✅ **Email System**: Business-specific email templates and settings  
+✅ **PostgreSQL**: Robust database with proper indexing  
+✅ **Docker Setup**: Complete containerized deployment  
+✅ **Management Commands**: Easy setup and migration tools  
 
-The system is now ready for production deployment as a true multi-tenant SaaS platform.
+The system is ready for production deployment as a true multi-tenant SaaS platform. All documentation is in English.

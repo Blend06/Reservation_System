@@ -1,10 +1,28 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from api.models import Reservation, Business
 from api.serializers import ReservationSerializer
 from api.middleware import get_current_tenant
+
+
+def get_tenant_from_request(request):
+    """
+    Resolve business (tenant) from subdomain sent by frontend.
+    Used when API is on a different host (e.g. api.domain.com) so Host header
+    doesn't contain the business subdomain.
+    """
+    subdomain = (
+        request.META.get('HTTP_X_SUBDOMAIN') or
+        request.data.get('subdomain')
+    )
+    if not subdomain:
+        return None
+    try:
+        return Business.objects.get(subdomain=subdomain.strip().lower(), is_active=True)
+    except (Business.DoesNotExist, Business.MultipleObjectsReturned):
+        return None
+
 
 class ReservationViewSet(viewsets.ModelViewSet):
     serializer_class = ReservationSerializer
@@ -36,20 +54,31 @@ class ReservationViewSet(viewsets.ModelViewSet):
         # No access for unauthenticated users on main domain
         return Reservation.objects.none()
 
+    def create(self, request, *args, **kwargs):
+        """Remove subdomain from body before validation (used only to resolve tenant)."""
+        data = request.data.copy() if request.data else {}
+        data.pop('subdomain', None)
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
     def perform_create(self, serializer):
         """
-        Create reservation with proper business context
+        Create reservation with proper business context.
+        Public (simple) clients can create without login when business is identified
+        by subdomain (from Host header or X-Subdomain / body).
         """
-        tenant = get_current_tenant()
-        
+        tenant = get_current_tenant() or get_tenant_from_request(self.request)
+
         if tenant:
-            # Subdomain context - create reservation for this business
+            # Subdomain context or subdomain from frontend - no auth required
             serializer.save(business=tenant, status='pending')
         else:
-            # Main domain context - require authentication and business
+            # Main domain, no subdomain - require authentication and business
             if not self.request.user.is_authenticated:
                 raise PermissionError("Authentication required")
-            
             if self.request.user.is_business_owner and self.request.user.business:
                 serializer.save(business=self.request.user.business)
             else:
