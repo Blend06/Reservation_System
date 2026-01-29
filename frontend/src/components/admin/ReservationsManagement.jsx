@@ -54,10 +54,10 @@ const ReservationsManagement = () => {
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <button 
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/superadmin')}
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
-                ← Back to Dashboard
+                ← Back to My Dashboard
               </button>
               <h1 className="text-3xl font-bold text-gray-800">Reservations Management</h1>
             </div>

@@ -54,9 +54,9 @@ const BusinessDashboard = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Business Dashboard</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Your dashboard</h1>
               <p className="text-gray-600">
-                {user?.business?.name} - Manage your reservations
+                {user?.business?.name} – Manage your clients (people who make reservations)
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -120,13 +120,13 @@ const BusinessDashboard = () => {
           />
         </div>
 
-        {/* Business Info Card */}
+        {/* Booking link for your clients */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <div className="flex justify-between items-start">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Your Booking Link</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Booking link for your clients</h2>
               <p className="text-gray-600 mb-4">
-                Share this link with your customers so they can book appointments directly:
+                Share this link so your clients (customers) can book appointments – no login required:
               </p>
               <div className="bg-gray-50 p-3 rounded-lg border">
                 <code className="text-blue-600 font-mono">
@@ -151,12 +151,12 @@ const BusinessDashboard = () => {
           </div>
         </div>
 
-        {/* Reservations List */}
+        {/* Your clients' reservations */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-gray-900">
-                Reservations
+                Your clients' reservations
                 {filterStatus !== 'all' && (
                   <span className="ml-2 text-sm font-normal text-gray-500">
                     (Filtered by {filterStatus})

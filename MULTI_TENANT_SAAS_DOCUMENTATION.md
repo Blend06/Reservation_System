@@ -24,6 +24,132 @@ This document outlines the complete transformation of a single-tenant reservatio
    - No "view my reservations" for end customers; only business owners see reservations in their dashboard
    - Business-branded experience
 
+---
+
+## Paths, Roles, and Navigation
+
+This section documents all frontend paths, user roles, and how navigation/redirects work.
+
+### User roles
+
+| Role | `user_type` | Who | Sees |
+|------|-------------|-----|------|
+| **Super Admin** | `super_admin` | Platform owner (you) | Only `/superadmin` and its sub-routes. Manages client businesses. |
+| **Business Owner** | `business_owner` | Your client (e.g. salon owner) | Only `/business`. Manages their reservations (their clients who book). |
+
+There is no separate “Admin Dashboard” anymore. Super admin has one dashboard; business owner has one dashboard.
+
+### Paths by role
+
+#### Main domain (e.g. `yourdomain.com` or `localhost:3000`)
+
+| Path | Who can access | Redirects / behaviour |
+|------|----------------|------------------------|
+| `/` | Anyone | Not logged in → `/login`. Logged in: super_admin → `/superadmin`, business_owner → `/business`, is_admin → `/superadmin`, else → `/homepage`. |
+| `/login` | Public | Login page. After login: super_admin → `/superadmin`, business_owner → `/business`, else → `/superadmin`. |
+| `/register` | Public | Registration (if used). |
+| `/book` | Public | Redirects to `/book/testsalon` (default subdomain for local testing). |
+| `/book/:subdomain` | Public | Public booking form for that business. No login. Subdomain in URL is sent to API so reservation is assigned to the correct business. |
+| `/superadmin` | **Super Admin only** | My Dashboard (manage your client businesses). If user is business_owner → redirect to `/business`. If not super_admin → `/login`. |
+| `/superadmin/businesses` | **Super Admin only** | Manage businesses (list, create, stats). Same protection as `/superadmin`. |
+| `/business` | **Business Owner only** | Your dashboard (manage your clients’ reservations). If user is super_admin → redirect to `/superadmin`. If not business_owner → `/login`. |
+| `/dashboard` | **Removed** | No dashboard page. Redirects: super_admin → `/superadmin`, business_owner → `/business`, else → `/superadmin`. Not logged in → `/login`. |
+| `/admin/users` | Admin (`is_admin`) | Users management (all user attributes). |
+| `/admin/reservations` | Admin (`is_admin`) | Reservations management (all businesses). |
+| `/homepage` | Any authenticated user | Legacy homepage (protected). |
+| `/reservations` | Any authenticated user | Legacy reservations (protected). |
+| `*` (any other path) | — | Redirect to `/login`. |
+
+#### Subdomain (e.g. `companyA.yourdomain.com` or `salon.localhost`)
+
+| Path | Who | Behaviour |
+|------|-----|-----------|
+| `/*` (all paths) | Public | Always the **public booking** interface (`PublicBooking`). No login. Tenant is inferred from host (subdomain). |
+
+So on a subdomain there are no role-based routes: only the booking form.
+
+### Navigation rules (summary)
+
+1. **Super Admin**
+   - Sees **only** `/superadmin` and `/superadmin/*`.
+   - If they open `/business` → redirect to `/superadmin`.
+   - Root `/` and post-login send them to `/superadmin`.
+
+2. **Business Owner**
+   - Sees **only** `/business`.
+   - If they open `/superadmin` or `/superadmin/businesses` → redirect to `/business`.
+   - Root `/` and post-login send them to `/business`.
+
+3. **Public (not logged in)**
+   - Can use: `/login`, `/register`, `/book`, `/book/:subdomain`.
+   - Root `/` → `/login`.
+   - Subdomain → public booking only.
+
+4. **Legacy / admin**
+   - `/admin/users` and `/admin/reservations` require `is_admin` (e.g. super_admin or is_staff).
+   - `/dashboard` does not render a page; it only redirects as above.
+
+### Protected route logic (frontend)
+
+Defined in `frontend/src/router/index.js`:
+
+- **`ProtectedRoute` with `superAdminOnly={true}`**
+  - Not authenticated → `/login`.
+  - If user is **business_owner** → redirect to **`/business`** (so they never see superadmin).
+  - If user is not **super_admin** → `/login`.
+  - Otherwise → render children (superadmin pages).
+
+- **`ProtectedRoute` with `businessOwnerOnly={true}`**
+  - Not authenticated → `/login`.
+  - If user is **super_admin** → redirect to **`/superadmin`** (so they never see business dashboard).
+  - If user is not **business_owner** → `/login`.
+  - Otherwise → render children (business dashboard).
+
+- **`ProtectedRoute` with `adminOnly={true}`**
+  - Not authenticated or not `user.is_admin` → `/login`.
+  - Otherwise → render children (e.g. `/admin/users`, `/admin/reservations`).
+
+### Quick reference
+
+| Role | Default after login | Can access | Cannot access (redirect target) |
+|------|---------------------|------------|----------------------------------|
+| Super Admin | `/superadmin` | `/superadmin`, `/superadmin/businesses`, `/admin/*`, `/homepage`, `/reservations` | `/business` → `/superadmin` |
+| Business Owner | `/business` | `/business` only (for their dashboard) | `/superadmin`, `/superadmin/*` → `/business` |
+
+---
+
+## Database Design
+
+### How a reservation is saved
+
+1. **Who can create a reservation**
+   - **Public (no login):** A customer opens the booking page (e.g. `/book/testsalon` or `testsalon.yourdomain.com`), fills the form (name, phone, date, time, notes), and submits. The frontend sends the data plus the **subdomain** (from the URL or host) so the backend knows which business the reservation belongs to.
+   - **Business owner (logged in):** Can also create reservations from the main domain; the business is taken from their linked `User.business`.
+
+2. **Backend flow**
+   - Request hits `POST /api/reservations/` with body: `customer_name`, `customer_phone`, `start_time`, `end_time`, `notes`, and optionally `subdomain`.
+   - The API does **not** require authentication for this. It resolves the **Business (tenant)** from:
+     - the request **Host** (when the API is on the same subdomain), or
+     - the **`subdomain`** in the body or **`X-Subdomain`** header (e.g. when the frontend is at `localhost:3000/book/testsalon` and the API is at `localhost:8000`).
+   - It finds the `Business` with that `subdomain` and `is_active=True`, then creates a **Reservation** row with:
+     - `business_id` = that business’s UUID
+     - `customer_name`, `customer_phone`, `customer_email` (optional), `start_time`, `end_time`, `notes`
+     - `status` = `'pending'`
+     - `customer_id` = `NULL` (the person who booked is not a `User`; they are only stored on the reservation).
+
+3. **Tables involved**
+   - **Business:** one row per tenant (e.g. Test Salon, subdomain `testsalon`). Identified by `subdomain`.
+   - **Reservation:** one row per booking. Each row has:
+     - `business_id` (FK to Business) – which salon/business it belongs to
+     - `customer_name`, `customer_phone`, `customer_email` (optional) – no User account
+     - `start_time`, `end_time`, `status`, `notes`, `created_at`, `updated_at`
+     - optional legacy `customer_id` (FK to User), usually `NULL` for public bookings
+   - **User:** only for **your** staff: super admins and business owners. The person who made the reservation is **not** stored in User; they exist only as `customer_name` / `customer_phone` on the reservation.
+
+So: **one reservation = one row in `Reservation`**, linked to one **Business** by `business_id`, with customer info stored directly on that row. No separate “customer” or “simple user” table.
+
+---
+
 ## Phase 1: Database Schema & Models
 
 ### New Models Created
@@ -244,6 +370,50 @@ ADMIN_EMAIL=admin@yourdomain.com
 
 REDIS_URL=redis://redis:6379/0
 ```
+
+## Login as Super Admin and Admin
+
+### User types
+
+- **Super Admin:** `user_type = 'super_admin'`, `business = NULL`. Platform owner; manages all businesses and sees all reservations. Logs in at the main domain and is redirected to `/superadmin`.
+- **Business Owner:** `user_type = 'business_owner'`, `business = <one Business>`. Your client; sees only their business and its reservations. Logs in at the main domain and is redirected to `/business`.
+- **Admin (Django admin):** Any user with `is_staff = True` can open Django’s admin at **`/admin/`** (e.g. `http://localhost:8000/admin/`). The `create_superadmin` command creates a user with `is_staff=True`, so that user is both Super Admin and Django admin.
+
+### Create a Super Admin (first time)
+
+From the **backend** directory (where `manage.py` is), run:
+
+```bash
+python manage.py create_superadmin \
+  --email admin@yourdomain.com \
+  --password your-password \
+  --first-name Admin \
+  --last-name User
+```
+
+This creates a **User** with:
+- `user_type = 'super_admin'`
+- `business = NULL`
+- `is_staff = True`, `is_superuser = True` (so they can use Django admin)
+
+If the email already exists, the command will not create a duplicate.
+
+### Log in as Super Admin (app login)
+
+1. Open the **frontend** login page: **`http://localhost:3000/login`** (or your main domain).
+2. Enter the **email** and **password** you used in `create_superadmin`.
+3. Submit. The app calls `POST /api/auth/login/` with email/password; the backend authenticates and returns JWT tokens.
+4. The frontend stores the token and loads the user via `GET /api/auth/me/`. The user has `user_type: 'super_admin'`, so the app redirects to **`/superadmin`** (Super Admin dashboard).
+
+You are now logged in as Super Admin in the app.
+
+### Log in as Django Admin (backend admin)
+
+1. Open **`http://localhost:8000/admin/`** (or your backend URL + `/admin/`).
+2. Log in with the **same email and password** as the Super Admin user created above (that user has `is_staff=True`).
+3. You can manage **Users**, **Businesses**, **Reservations**, and other models registered in Django admin.
+
+So: **one account** (created with `create_superadmin`) is used both for **app login as Super Admin** (at `/login` → `/superadmin`) and for **Django admin** (at `/admin/`).
 
 ## Management Commands
 
