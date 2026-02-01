@@ -1,15 +1,21 @@
 # Email System Documentation
 
 ## Overview
-Comprehensive email notification system for the Fade District reservation platform using Django's email framework, Celery for async processing, and Gmail SMTP for delivery.
+The Fade District SaaS platform uses an automated email notification system to keep business owners informed about new reservations and status changes. The system is designed to send notifications only to business owners, not to end customers, maintaining privacy and reducing email clutter.
 
 ## 🏗️ Architecture
+
+### Business Owner Focused Design
+- **Business Owner Notifications**: Only business owners receive email notifications
+- **Privacy First**: End customers don't receive automatic emails
+- **Multi-Tenant**: Each business owner receives notifications for their business only
+- **Professional Templates**: Well-designed HTML emails for business communication
 
 ### Components
 - **Django Email Backend**: SMTP configuration for Gmail
 - **Celery Tasks**: Asynchronous email processing
-- **HTML Templates**: Professional email designs
-- **Django Signals**: Automatic email triggers
+- **HTML Templates**: Professional email designs for business owners
+- **Multi-Tenant Logic**: Business-specific email routing
 - **Gmail SMTP**: Reliable email delivery service
 
 ## 📁 File Structure

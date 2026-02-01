@@ -12,6 +12,8 @@ class BusinessMinimalSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
     is_staff_member = serializers.BooleanField(source='is_staff', required=False)
+    is_super_admin = serializers.BooleanField(read_only=True)
+    is_business_owner = serializers.BooleanField(read_only=True)
     business_details = BusinessMinimalSerializer(source='business', read_only=True)
 
     class Meta:
@@ -19,7 +21,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             "id", "username", "email", "first_name", "last_name", "phone",
             "password", "user_type", "business", "business_details",
-            "is_admin", "is_staff_member", "is_active",
+            "is_admin", "is_super_admin", "is_business_owner", "is_staff_member", "is_active",
             "created_at", "updated_at", "last_login"
         ]
         read_only_fields = ["created_at", "updated_at", "last_login"]

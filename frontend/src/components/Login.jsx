@@ -11,18 +11,21 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(''); // Clear previous errors
     try {
       const userData = await login(email, password);
+      
       // Navigate based on user role from returned data
-      if (userData.user_type === 'super_admin') {
-        navigate('/superadmin');
-      } else if (userData.user_type === 'business_owner') {
-        navigate('/business');
+      if (userData.is_super_admin) {
+        navigate('/superadmin/dashboard', { replace: true });
+      } else if (userData.is_business_owner) {
+        navigate('/business/dashboard', { replace: true });
       } else {
-        navigate('/superadmin');
+        navigate('/superadmin/dashboard', { replace: true });
       }
     } catch (err) {
-      setError('Login failed. Please check your credentials.');
+      console.error('Login error:', err);
+      setError(typeof err === 'string' ? err : 'Login failed. Please check your credentials.');
     }
   };
 

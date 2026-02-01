@@ -89,12 +89,13 @@ def send_reservation_status_email(user_email, user_name, reservation_id, status,
         raise e
 
 @shared_task
-def send_new_reservation_admin_notification(customer_name, customer_phone, reservation_id, reservation_date, reservation_time, business_name, admin_email):
+def send_new_reservation_notification(customer_name, customer_email, customer_phone, reservation_id, reservation_date, reservation_time, business_name, business_owner_email):
     """
-    Send email notification to business admin when a new reservation is created
+    Send email notification to business owner when a new reservation is created
+    Only business owners receive notifications, not customers
     """
     try:
-        logger.info(f'Starting admin notification for reservation {reservation_id} to {admin_email}')
+        logger.info(f'Starting business owner notification for reservation {reservation_id} to {business_owner_email}')
         
         subject = f'🔔 New Reservation #{reservation_id} - {business_name}'
         template = 'new_reservation_admin.html'
@@ -102,6 +103,7 @@ def send_new_reservation_admin_notification(customer_name, customer_phone, reser
         # Render HTML email template
         html_message = render_to_string(template, {
             'customer_name': customer_name,
+            'customer_email': customer_email,
             'customer_phone': customer_phone,
             'reservation_id': reservation_id,
             'reservation_date': reservation_date,
@@ -109,27 +111,27 @@ def send_new_reservation_admin_notification(customer_name, customer_phone, reser
             'business_name': business_name,
         })
         
-        logger.info(f'Admin template rendered successfully')
+        logger.info(f'Business owner notification template rendered successfully')
         
-        # Send email to business admin
+        # Send email to business owner only
         result = send_mail(
             subject=subject,
             message='',  
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[admin_email],
+            recipient_list=[business_owner_email],
             html_message=html_message,
             fail_silently=False,
         )
         
         if result:
-            logger.info(f'Admin notification sent successfully for reservation {reservation_id}')
-            return f'Admin notification sent for reservation {reservation_id}'
+            logger.info(f'Business owner notification sent successfully for reservation {reservation_id}')
+            return f'Business owner notification sent for reservation {reservation_id}'
         else:
-            logger.error(f'Admin notification failed for reservation {reservation_id}')
-            raise Exception('Admin email sending returned False')
+            logger.error(f'Business owner notification failed for reservation {reservation_id}')
+            raise Exception('Business owner email sending returned False')
         
     except Exception as e:
-        logger.error(f'Failed to send admin notification for reservation {reservation_id}: {str(e)}')
+        logger.error(f'Failed to send business owner notification for reservation {reservation_id}: {str(e)}')
         raise e
 
 # Direct email functions (fallback when Celery fails)
@@ -156,13 +158,14 @@ def send_reservation_status_email_direct(user_email, user_name, reservation_id, 
     from_email = business_email if business_email else settings.DEFAULT_FROM_EMAIL
     return send_email_direct(subject, template, context, [user_email], from_email)
 
-def send_new_reservation_admin_notification_direct(customer_name, customer_phone, reservation_id, reservation_date, reservation_time, business_name, admin_email):
-    """Direct email sending for admin notifications"""
+def send_new_reservation_notification_direct(customer_name, customer_email, customer_phone, reservation_id, reservation_date, reservation_time, business_name, business_owner_email):
+    """Direct email sending for business owner notifications"""
     subject = f'🔔 New Reservation #{reservation_id} - {business_name}'
     template = 'new_reservation_admin.html'
     
     context = {
         'customer_name': customer_name,
+        'customer_email': customer_email,
         'customer_phone': customer_phone,
         'reservation_id': reservation_id,
         'reservation_date': reservation_date,
@@ -170,7 +173,7 @@ def send_new_reservation_admin_notification_direct(customer_name, customer_phone
         'business_name': business_name,
     }
     
-    return send_email_direct(subject, template, context, [admin_email])
+    return send_email_direct(subject, template, context, [business_owner_email])
 
 def send_email_direct(subject, template, context, recipient_list, from_email=None):
     """

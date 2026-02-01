@@ -1,20 +1,49 @@
-# Fade District - Reservation Management System
+# Fade District - Multi-Tenant SaaS Reservation System
 
 ## 🏢 Project Overview
-A comprehensive reservation management system built with Django REST API backend and React frontend, featuring automated email notifications, status management, and admin controls.
+A comprehensive multi-tenant SaaS reservation management system built with Django REST API backend and React frontend. Designed for businesses like salons, spas, restaurants, and service providers to manage customer reservations efficiently through a centralized platform.
 
-## 🏗️ System Architecture
+## 🏗️ Multi-Tenant Architecture
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   React Frontend │    │  Django Backend │    │     Services    │
-│                 │    │                 │    │                 │
-│  • User Interface│◄──►│  • REST API     │◄──►│  • MySQL DB     │
-│  • Admin Panel  │    │  • Authentication│    │  • Redis Queue  │
-│  • Responsive   │    │  • Email System │    │  • Celery Tasks │
-│  • Modern UI    │    │  • Auto Status  │    │  • SMTP Server  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    MAIN DOMAIN (yourdomain.com)                │
+├─────────────────┬─────────────────┬─────────────────────────────┤
+│  Super Admin    │ Business Owner  │        Public Access       │
+│   Dashboard     │   Dashboard     │                             │
+│                 │                 │                             │
+│ • Manage All    │ • Own Business  │ • Landing Page             │
+│   Businesses    │   Only          │ • Login/Register           │
+│ • Create Users  │ • Reservations  │                             │
+│ • System Stats  │ • Customers     │                             │
+└─────────────────┴─────────────────┴─────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              SUBDOMAINS (business.yourdomain.com)              │
+├─────────────────────────────────────────────────────────────────┤
+│                   PUBLIC BOOKING INTERFACE                     │
+│                                                                 │
+│ • No Login Required     • Business-Specific Branding          │
+│ • Simple Booking Form   • Custom Domain Support               │
+│ • Real-time Availability• Mobile-Optimized                    │
+│ • Instant Confirmation  • Multi-language Support              │
+└─────────────────────────────────────────────────────────────────┘
 ```
+
+## 🎯 SaaS Model Overview
+
+### Three-Tier User System
+1. **Super Admin**: Platform administrator managing the entire SaaS
+2. **Business Owner**: Individual business managers with dedicated dashboards
+3. **End Customers**: Public users making reservations (no login required)
+
+### Multi-Tenant Benefits
+- **Single Codebase**: Manages unlimited businesses
+- **Data Isolation**: Complete business data separation
+- **Scalable Architecture**: Easy to add new businesses
+- **Centralized Management**: Super admin oversight
+- **Custom Branding**: Business-specific customization
 
 ## 🚀 Key Features
 
