@@ -477,7 +477,7 @@ End customers (simple clients) do not need to sign up or log in to make a reserv
 4. With a valid tenant, the backend creates the reservation with **no authentication** and returns success.
 5. End customers do **not** have a "view my reservations" or lookup feature; only business owners see and manage reservations in their dashboard.
 
-For **local development**, the frontend may run at `localhost:3000` while the API runs at `localhost:8000`, so the backend does not receive a subdomain in the Host header. Use a subdomain in development (e.g. add `127.0.0.1 salon.localhost` to your hosts file and open `http://salon.localhost:3000`) so that the frontend can send the subdomain and the reservation is assigned to the correct business.
+For **local development**, the frontend may run at `localhost:3000` while the API runs at `localhost:8000`, so the backend does not receive a subdomain in the Host header. Use a subdomain in development (e.g. add `127.0.0.1 salon.localhost` to your hosts file and open `http://salon.localhost:3000`) so that the frontend can send the subdomain and the reservation is assigned to the correct business. See the section **Testing domains and subdomains** below for full local and production testing steps.
 
 ## Security & Data Isolation
 
@@ -512,6 +512,133 @@ The frontend sends the subdomain from the URL path in the request body, so the b
 
 - Production: customers open `https://companyA.yourdomain.com` and get the same booking form.
 - Local with subdomain: add `127.0.0.1 salon.localhost` to your hosts file and open `http://salon.localhost:3000`.
+
+---
+
+## Testing domains and subdomains (local vs deployed)
+
+How to test subdomains **now (locally)** and **when deployed (production)**.
+
+### Testing locally (now)
+
+You don’t have real subdomains on `localhost`, so the app uses the **path-based** booking route.
+
+#### Option A: Path-based booking (no subdomain, recommended for local)
+
+1. Run backend and frontend (e.g. `http://localhost:8000`, `http://localhost:3000`).
+2. Create a business with a subdomain (e.g. `testsalon`) in Super Admin → Businesses.
+3. **Main domain (login, dashboards):**
+   - Open **`http://localhost:3000`** → redirects to login.
+   - Log in as Super Admin → **`http://localhost:3000/superadmin`**.
+   - Log in as Business Owner → **`http://localhost:3000/business`**.
+4. **Public booking (no login):**
+   - Open **`http://localhost:3000/book/testsalon`** (or **`http://localhost:3000/book`** → redirects to `/book/testsalon`).
+   - Fill the form and submit; the frontend sends `subdomain: "testsalon"` in the request body, so the reservation is assigned to the correct business.
+
+No hosts file or DNS: everything is on `localhost` with `/book/:subdomain`.
+
+#### Option B: Real subdomains on your machine (optional)
+
+To test **real** subdomains locally (e.g. `salon.localhost`):
+
+1. **Hosts file**  
+   Add lines so subdomains point to your PC:
+   ```text
+   127.0.0.1   yourdomain.localhost
+   127.0.0.1   salon.localhost
+   127.0.0.1   testsalon.localhost
+   ```
+   - **Windows:** `C:\Windows\System32\drivers\etc\hosts` (edit as Administrator).
+   - **macOS / Linux:** `/etc/hosts`.
+
+2. **Frontend**  
+   Serve the app so it’s reachable at subdomains:
+   - Either use a dev server that supports subdomains (e.g. `localhost` + different ports per “subdomain”), or
+   - Use one origin and still use **`/book/:subdomain`** for booking (Option A).
+
+3. **Access**
+   - Main app: **`http://localhost:3000`** (or `http://yourdomain.localhost:3000` if you configure the dev server).
+   - Booking for “salon”: **`http://salon.localhost:3000`** (if the dev server serves that host); otherwise use **`http://localhost:3000/book/salon`**.
+
+Many dev setups only expose `localhost:3000`, so **Option A** (`/book/:subdomain`) is the usual way to test locally.
+
+---
+
+### Testing when deployed (production)
+
+After deploy, you have a real main domain and real subdomains.
+
+#### 1. DNS
+
+- **Main domain**  
+  e.g. `yourdomain.com` → A or CNAME to your server (or load balancer).
+
+- **Subdomains for each business**  
+  Either:
+  - **Wildcard:** `*.yourdomain.com` → same server. Any `companyA.yourdomain.com` works as soon as you create a business with subdomain `companyA`.  
+  - **Per subdomain:** one A/CNAME per client, e.g. `salon.yourdomain.com`, `barber.yourdomain.com`.
+
+#### 2. Backend (Django)
+
+- **ALLOWED_HOSTS**  
+  Include main domain and subdomains, e.g.:
+  ```python
+  ALLOWED_HOSTS = [
+      'yourdomain.com',
+      '.yourdomain.com',   # allows any subdomain
+      'localhost',
+      '127.0.0.1',
+  ]
+  ```
+- **CORS**  
+  If frontend is on another origin (e.g. `app.yourdomain.com`), allow it and, if needed, `*.yourdomain.com` for subdomains.
+- **API URL**  
+  Frontend must call the API at the same origin per subdomain (e.g. `https://companyA.yourdomain.com/api/`) or a central API (e.g. `https://api.yourdomain.com`) and send `subdomain` in the body or `X-Subdomain` header (already supported).
+
+#### 3. Frontend (React)
+
+- **Build**  
+  Set the API base URL via env, e.g. `REACT_APP_API_URL=https://api.yourdomain.com` or relative `/api/` if the app is served from the same domain as the API.
+- **Deploy**  
+  - Either: one SPA at `yourdomain.com` (and at `companyA.yourdomain.com` via wildcard or reverse proxy that serves the same app), so `window.location.hostname` gives the subdomain.  
+  - Or: one app at `app.yourdomain.com` and booking at `/book/:subdomain` (path-based, like local).
+
+#### 4. SSL (HTTPS)
+
+- Use a certificate that covers the main domain and `*.yourdomain.com` (wildcard), or one cert per subdomain.
+- Typical: Let’s Encrypt with a wildcard DNS challenge, or your host’s automatic HTTPS.
+
+#### 5. How to test after deploy
+
+- **Main domain**  
+  - `https://yourdomain.com` → login; Super Admin → `/superadmin`, Business Owner → `/business`.
+- **Subdomain (real)**  
+  - Create a business with subdomain e.g. `salon`.
+  - Open **`https://salon.yourdomain.com`** → you should see the public booking form; the backend gets the tenant from the Host header.
+- **Reservation**  
+  - Submit a booking on `https://salon.yourdomain.com`; the reservation should be created for that business and visible in that business’s dashboard.
+
+#### 6. Checklist (deployed)
+
+| Item | Check |
+|------|--------|
+| DNS | Main domain and `*.yourdomain.com` (or each subdomain) point to the server. |
+| ALLOWED_HOSTS | Includes main domain and `.yourdomain.com`. |
+| CORS | Allows your frontend origin(s) and subdomains if needed. |
+| SSL | HTTPS for main domain and subdomains (e.g. wildcard cert). |
+| Business in DB | Business exists with the subdomain you’re testing (e.g. `salon`). |
+| API base URL | Frontend env points to the deployed API URL. |
+
+---
+
+### Summary
+
+| Environment | How to test main domain | How to test “subdomain” booking |
+|-------------|-------------------------|----------------------------------|
+| **Local (now)** | `http://localhost:3000` → login, `/superadmin`, `/business`. | `http://localhost:3000/book/testsalon` (path-based; subdomain sent in request body). |
+| **Deployed** | `https://yourdomain.com` → login, dashboards. | `https://salon.yourdomain.com` (real subdomain) or `https://yourdomain.com/book/salon` if you keep path-based booking. |
+
+---
 
 ### Test Scenarios
 1. **Subdomain Detection**: Verify middleware correctly identifies tenants

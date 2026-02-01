@@ -9,6 +9,7 @@ import SuperAdminDashboard from '../components/superadmin/SuperAdminDashboard';
 import BusinessManagement from '../components/superadmin/BusinessManagement';
 import BusinessDashboard from '../components/business/BusinessDashboard';
 import PublicBooking from '../components/public/PublicBooking';
+import LandingPage from '../components/LandingPage';
 import { useAuth } from '../auth/authStore';
 
 // Detect if we're on a subdomain
@@ -35,14 +36,14 @@ const ProtectedRoute = ({ children, adminOnly = false, superAdminOnly = false, b
 
   // Super admin sees only /superadmin – business owner sent to their dashboard
   if (superAdminOnly) {
-    if (user?.is_business_owner) return <Navigate to="/business" replace />;
+    if (user?.is_business_owner) return <Navigate to="/business/dashboard" replace />;
     if (!user?.is_super_admin) return <Navigate to="/login" />;
     return children;
   }
 
   // Business owner sees only /business – super admin sent to their dashboard
   if (businessOwnerOnly) {
-    if (user?.is_super_admin) return <Navigate to="/superadmin" replace />;
+    if (user?.is_super_admin) return <Navigate to="/superadmin/dashboard" replace />;
     if (!user?.is_business_owner) return <Navigate to="/login" />;
     return children;
   }
@@ -89,12 +90,16 @@ const AppRoutes = () => {
       
       {/* Super Admin Routes */}
       <Route 
-        path="/superadmin" 
+        path="/superadmin/dashboard" 
         element={
           <ProtectedRoute superAdminOnly={true}>
             <SuperAdminDashboard />
           </ProtectedRoute>
         } 
+      />
+      <Route 
+        path="/superadmin" 
+        element={<Navigate to="/superadmin/dashboard" replace />}
       />
       <Route 
         path="/superadmin/businesses" 
@@ -107,12 +112,16 @@ const AppRoutes = () => {
       
       {/* Business Owner Routes */}
       <Route 
-        path="/business" 
+        path="/business/dashboard" 
         element={
           <ProtectedRoute businessOwnerOnly={true}>
             <BusinessDashboard />
           </ProtectedRoute>
         } 
+      />
+      <Route 
+        path="/business" 
+        element={<Navigate to="/business/dashboard" replace />}
       />
       
       {/* Legacy Routes (for backward compatibility) */}
@@ -130,9 +139,9 @@ const AppRoutes = () => {
         path="/dashboard" 
         element={
           isAuthenticated() ? (
-            user?.is_super_admin ? <Navigate to="/superadmin" replace /> :
-            user?.is_business_owner ? <Navigate to="/business" replace /> :
-            <Navigate to="/superadmin" replace />
+            user?.is_super_admin ? <Navigate to="/superadmin/dashboard" replace /> :
+            user?.is_business_owner ? <Navigate to="/business/dashboard" replace /> :
+            <Navigate to="/superadmin/dashboard" replace />
           ) : <Navigate to="/login" replace />
         } 
       />
@@ -164,20 +173,20 @@ const AppRoutes = () => {
         } 
       />
       
-      {/* Root Route - Redirect based on user type */}
+      {/* Root Route - Landing page when not authenticated, redirect when logged in */}
       <Route 
         path="/" 
         element={
           isAuthenticated() ? 
-            (user?.is_super_admin ? <Navigate to="/superadmin" /> :
-             user?.is_business_owner ? <Navigate to="/business" /> :
-             user?.is_admin ? <Navigate to="/superadmin" /> :
+            (user?.is_super_admin ? <Navigate to="/superadmin/dashboard" /> :
+             user?.is_business_owner ? <Navigate to="/business/dashboard" /> :
+             user?.is_admin ? <Navigate to="/superadmin/dashboard" /> :
              <Navigate to="/homepage" />) :
-            <Navigate to="/login" />
+            <LandingPage />
         } 
       />
       {/* Catch-all so "No routes matched" never appears in console */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
