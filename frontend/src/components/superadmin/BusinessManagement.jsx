@@ -11,6 +11,8 @@ const BusinessManagement = () => {
   const [loading, setLoading] = useState(true);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [businessStats, setBusinessStats] = useState(null);
 
@@ -50,6 +52,29 @@ const BusinessManagement = () => {
       setShowStatsModal(true);
     } catch (error) {
       console.error('Error fetching business stats:', error);
+    }
+  };
+
+  const handleEditBusiness = (business) => {
+    setSelectedBusiness(business);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteBusiness = (business) => {
+    setSelectedBusiness(business);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteBusiness = async () => {
+    if (!selectedBusiness) return;
+    
+    try {
+      await api.delete(`businesses/${selectedBusiness.id}/`);
+      setShowDeleteModal(false);
+      setSelectedBusiness(null);
+      fetchBusinesses();
+    } catch (error) {
+      console.error('Error deleting business:', error);
     }
   };
 
@@ -191,12 +216,24 @@ const BusinessManagement = () => {
             Stats
           </button>
           <button
+            onClick={() => handleEditBusiness(business)}
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+          >
+            Edit
+          </button>
+          <button
             onClick={() => handleToggleStatus(business)}
             className={`text-sm font-medium ${
               business.is_active ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'
             }`}
           >
             {business.is_active ? 'Deactivate' : 'Activate'}
+          </button>
+          <button
+            onClick={() => handleDeleteBusiness(business)}
+            className="text-red-600 hover:text-red-800 text-sm font-medium"
+          >
+            Delete
           </button>
         </div>
       )
@@ -257,6 +294,88 @@ const BusinessManagement = () => {
           }}
           onCancel={() => setShowCreateModal(false)}
         />
+      </Modal>
+
+      {/* Edit Business Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedBusiness(null);
+        }}
+        title="Edit Business"
+      >
+        {selectedBusiness && (
+          <EditBusinessForm
+            business={selectedBusiness}
+            onSuccess={() => {
+              setShowEditModal(false);
+              setSelectedBusiness(null);
+              fetchBusinesses();
+            }}
+            onCancel={() => {
+              setShowEditModal(false);
+              setSelectedBusiness(null);
+            }}
+          />
+        )}
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedBusiness(null);
+        }}
+        title="Delete Business"
+      >
+        {selectedBusiness && (
+          <div className="space-y-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <span className="text-red-400 text-xl">⚠️</span>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">
+                    Are you sure you want to delete this business?
+                  </h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <p>
+                      This will permanently delete <strong>{selectedBusiness.name}</strong> and all associated data including:
+                    </p>
+                    <ul className="list-disc list-inside mt-2 space-y-1">
+                      <li>All business users and their accounts</li>
+                      <li>All reservations and booking history</li>
+                      <li>All business settings and customizations</li>
+                      <li>The subdomain <strong>{selectedBusiness.subdomain}</strong> will become available again</li>
+                    </ul>
+                    <p className="mt-2 font-medium">This action cannot be undone.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setSelectedBusiness(null);
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteBusiness}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Delete Business
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Business Stats Modal */}
@@ -473,15 +592,30 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL (optional)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Logo URL (optional)
+            <span className="text-xs text-gray-500 block">Direct link to business logo image</span>
+          </label>
           <input
             type="url"
             name="logo_url"
             value={formData.logo_url}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="https://..."
+            placeholder="https://example.com/logo.png"
           />
+          {formData.logo_url && (
+            <div className="mt-2">
+              <img 
+                src={formData.logo_url} 
+                alt="Logo preview" 
+                className="h-12 w-auto border border-gray-200 rounded"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -499,6 +633,224 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
         >
           {loading ? 'Creating...' : 'Create Business'}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+const EditBusinessForm = ({ business, onSuccess, onCancel }) => {
+  const [formData, setFormData] = useState({
+    name: business.name || '',
+    subdomain: business.subdomain || '',
+    email: business.email || '',
+    phone: business.phone || '',
+    business_hours_start: business.business_hours_start || '09:00',
+    business_hours_end: business.business_hours_end || '18:00',
+    timezone: business.timezone || 'Europe/Berlin',
+    email_from_name: business.email_from_name || '',
+    email_from_address: business.email_from_address || '',
+    primary_color: business.primary_color || '#3B82F6',
+    logo_url: business.logo_url || ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      await api.put(`businesses/${business.id}/`, formData);
+      onSuccess();
+    } catch (error) {
+      console.error('Error updating business:', error);
+    }
+    setLoading(false);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Subdomain</label>
+          <input
+            type="text"
+            name="subdomain"
+            value={formData.subdomain}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="salon"
+            required
+          />
+          <p className="text-xs text-gray-500 mt-1">{formData.subdomain}.yourdomain.com</p>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+          <input
+            type="tel"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Opening Time</label>
+          <input
+            type="time"
+            name="business_hours_start"
+            value={formData.business_hours_start}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Closing Time</label>
+          <input
+            type="time"
+            name="business_hours_end"
+            value={formData.business_hours_end}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+        <input
+          type="text"
+          name="timezone"
+          value={formData.timezone}
+          onChange={handleChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="Europe/Berlin"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email From Name</label>
+          <input
+            type="text"
+            name="email_from_name"
+            value={formData.email_from_name}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Business Name"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email From Address (optional)</label>
+          <input
+            type="email"
+            name="email_from_address"
+            value={formData.email_from_address}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="noreply@example.com"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Primary Color</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              name="primary_color"
+              value={formData.primary_color}
+              onChange={handleChange}
+              className="h-10 w-14 rounded border border-gray-300 cursor-pointer"
+            />
+            <input
+              type="text"
+              value={formData.primary_color}
+              onChange={(e) => setFormData((prev) => ({ ...prev, primary_color: e.target.value }))}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="#3B82F6"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Logo URL (optional)
+            <span className="text-xs text-gray-500 block">Direct link to business logo image</span>
+          </label>
+          <input
+            type="url"
+            name="logo_url"
+            value={formData.logo_url}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="https://example.com/logo.png"
+          />
+          {formData.logo_url && (
+            <div className="mt-2">
+              <img 
+                src={formData.logo_url} 
+                alt="Logo preview" 
+                className="h-12 w-auto border border-gray-200 rounded"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-end space-x-3 pt-4">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={loading}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+        >
+          {loading ? 'Updating...' : 'Update Business'}
         </button>
       </div>
     </form>

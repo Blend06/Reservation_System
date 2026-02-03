@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
     };
     
     initAuth();
-  }, []);
+  }, [token]); // Only depend on token, not the function
 
   const loadUserFromToken = async (tokenToUse = null) => {
     try {

@@ -7,6 +7,8 @@ import UsersManagement from '../components/admin/UsersManagement';
 import ReservationsManagement from '../components/admin/ReservationsManagement';
 import SuperAdminDashboard from '../components/superadmin/SuperAdminDashboard';
 import BusinessManagement from '../components/superadmin/BusinessManagement';
+import SuperAdminReservationsManagement from '../components/superadmin/ReservationsManagement';
+import SystemSettings from '../components/superadmin/SystemSettings';
 import BusinessDashboard from '../components/business/BusinessDashboard';
 import PublicBooking from '../components/public/PublicBooking';
 import LandingPage from '../components/LandingPage';
@@ -106,6 +108,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute superAdminOnly={true}>
             <BusinessManagement />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/superadmin/reservations" 
+        element={
+          <ProtectedRoute superAdminOnly={true}>
+            <SuperAdminReservationsManagement />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/superadmin/settings" 
+        element={
+          <ProtectedRoute superAdminOnly={true}>
+            <SystemSettings />
           </ProtectedRoute>
         } 
       />
