@@ -1,7 +1,7 @@
 # Import all tasks to make them available
 from .email_tasks import (
     send_reservation_status_email,
-    send_new_reservation_admin_notification,
+    send_new_reservation_notification,
     test_email_configuration
 )
 from .status_tasks import (
@@ -10,7 +10,7 @@ from .status_tasks import (
 
 __all__ = [
     'send_reservation_status_email',
-    'send_new_reservation_admin_notification',
+    'send_new_reservation_notification',
     'test_email_configuration',
     'check_overdue_reservations'
 ]

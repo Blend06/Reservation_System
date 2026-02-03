@@ -140,7 +140,7 @@ const SuperAdminDashboard = () => {
                 title="Add new client (business)"
                 description="Create a new business on the platform"
                 icon="➕"
-                onClick={() => navigate('/superadmin/businesses/create')}
+                onClick={() => navigate('/superadmin/businesses')}
               />
               <ActionButton
                 title="View all reservations"

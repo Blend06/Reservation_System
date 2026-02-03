@@ -1,10 +1,10 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from api.models import Reservation
-from api.tasks import send_reservation_status_email, send_new_reservation_admin_notification
+from api.tasks import send_reservation_status_email, send_new_reservation_notification
 from api.tasks.email_tasks import (
     send_reservation_status_email_direct, 
-    send_new_reservation_admin_notification_direct
+    send_new_reservation_notification_direct
 )
 import logging
 
@@ -61,32 +61,34 @@ def handle_reservation_changes(sender, instance, created, **kwargs):
             
             # Try Celery first, fallback to direct email
             try:
-                send_new_reservation_admin_notification.delay(
+                send_new_reservation_notification.delay(
                     customer_name=customer_name,
+                    customer_email=instance.customer_email or '',
                     customer_phone=customer_phone,
                     reservation_id=instance.id,
                     reservation_date=reservation_date,
                     reservation_time=reservation_time,
                     business_name=business.name,
-                    admin_email=admin_email
+                    business_owner_email=admin_email
                 )
-                logger.info(f'Admin notification queued via Celery for reservation {instance.id}')
+                logger.info(f'Business owner notification queued via Celery for reservation {instance.id}')
             except Exception as celery_error:
-                logger.warning(f'Celery failed for admin notification, using direct email: {celery_error}')
+                logger.warning(f'Celery failed for business owner notification, using direct email: {celery_error}')
                 # Fallback to direct email
-                success = send_new_reservation_admin_notification_direct(
+                success = send_new_reservation_notification_direct(
                     customer_name=customer_name,
+                    customer_email=instance.customer_email or '',
                     customer_phone=customer_phone,
                     reservation_id=instance.id,
                     reservation_date=reservation_date,
                     reservation_time=reservation_time,
                     business_name=business.name,
-                    admin_email=admin_email
+                    business_owner_email=admin_email
                 )
                 if success:
-                    logger.info(f'Admin notification sent directly for reservation {instance.id}')
+                    logger.info(f'Business owner notification sent directly for reservation {instance.id}')
                 else:
-                    logger.error(f'Direct admin notification failed for reservation {instance.id}')
+                    logger.error(f'Direct business owner notification failed for reservation {instance.id}')
             
         # Note: No customer email notifications - business will contact customer via phone
         # Clean up the stored status
