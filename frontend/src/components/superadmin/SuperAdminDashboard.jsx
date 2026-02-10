@@ -129,9 +129,9 @@ const SuperAdminDashboard = () => {
                 onClick={handleLogout}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2"
               >
-                <LogOut className="w-4 h-4" />
-                <span>Logout</span>
-              />
+              <LogOut className="w-4 h-4" />
+              <span>Logout</span>
+            </button>
             </div>
           </div>
         </div>
@@ -165,6 +165,7 @@ const SuperAdminDashboard = () => {
             color="bg-purple-500"
             trend="up"
             trendValue="5.1%"
+            onClick={() => navigate('/superadmin/businesses')}
           />
           <StatCard
             title="Reservations (all)"
