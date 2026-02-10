@@ -3,6 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/authStore';
 import api from '../../api/axios';
 import { LoadingSpinner, Modal, Table } from '../ui';
+import { 
+  ArrowLeft, 
+  Plus, 
+  BarChart3, 
+  Edit, 
+  Power, 
+  PowerOff, 
+  Trash2, 
+  AlertTriangle,
+  X
+} from 'lucide-react';
 
 const BusinessManagement = () => {
   const navigate = useNavigate();
@@ -211,29 +222,42 @@ const BusinessManagement = () => {
         <div className="flex space-x-2">
           <button
             onClick={() => handleViewStats(business)}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center space-x-1"
           >
-            Stats
+            <BarChart3 className="w-4 h-4" />
+            <span>Stats</span>
           </button>
           <button
             onClick={() => handleEditBusiness(business)}
-            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center space-x-1"
           >
-            Edit
+            <Edit className="w-4 h-4" />
+            <span>Edit</span>
           </button>
           <button
             onClick={() => handleToggleStatus(business)}
-            className={`text-sm font-medium ${
+            className={`text-sm font-medium flex items-center space-x-1 ${
               business.is_active ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'
             }`}
           >
-            {business.is_active ? 'Deactivate' : 'Activate'}
+            {business.is_active ? (
+              <>
+                <PowerOff className="w-4 h-4" />
+                <span>Deactivate</span>
+              </>
+            ) : (
+              <>
+                <Power className="w-4 h-4" />
+                <span>Activate</span>
+              </>
+            )}
           </button>
           <button
             onClick={() => handleDeleteBusiness(business)}
-            className="text-red-600 hover:text-red-800 text-sm font-medium"
+            className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center space-x-1"
           >
-            Delete
+            <Trash2 className="w-4 h-4" />
+            <span>Delete</span>
           </button>
         </div>
       )
@@ -253,18 +277,20 @@ const BusinessManagement = () => {
             <div>
               <button
                 onClick={() => navigate('/superadmin')}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium mb-2"
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium mb-2 flex items-center"
               >
-                ← Back to My Dashboard
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Back to My Dashboard
               </button>
               <h1 className="text-2xl font-bold text-gray-900">Business Management</h1>
               <p className="text-gray-600">Manage all businesses on the platform</p>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2"
             >
-              Create Business
+              <Plus className="w-4 h-4" />
+              <span>Create Business</span>
             </button>
           </div>
         </div>
@@ -335,7 +361,7 @@ const BusinessManagement = () => {
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <span className="text-red-400 text-xl">⚠️</span>
+                  <AlertTriangle className="w-5 h-5 text-red-400" />
                 </div>
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-red-800">
@@ -363,15 +389,17 @@ const BusinessManagement = () => {
                   setShowDeleteModal(false);
                   setSelectedBusiness(null);
                 }}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 flex items-center space-x-2"
               >
-                Cancel
+                <X className="w-4 h-4" />
+                <span>Cancel</span>
               </button>
               <button
                 onClick={confirmDeleteBusiness}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center space-x-2"
               >
-                Delete Business
+                <Trash2 className="w-4 h-4" />
+                <span>Delete Business</span>
               </button>
             </div>
           </div>
@@ -623,16 +651,18 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+          className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 flex items-center space-x-2"
         >
-          Cancel
+          <X className="w-4 h-4" />
+          <span>Cancel</span>
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400 flex items-center space-x-2"
         >
-          {loading ? 'Creating...' : 'Create Business'}
+          <Plus className="w-4 h-4" />
+          <span>{loading ? 'Creating...' : 'Create Business'}</span>
         </button>
       </div>
     </form>
@@ -841,16 +871,18 @@ const EditBusinessForm = ({ business, onSuccess, onCancel }) => {
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+          className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 flex items-center space-x-2"
         >
-          Cancel
+          <X className="w-4 h-4" />
+          <span>Cancel</span>
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400 flex items-center space-x-2"
         >
-          {loading ? 'Updating...' : 'Update Business'}
+          <Edit className="w-4 h-4" />
+          <span>{loading ? 'Updating...' : 'Update Business'}</span>
         </button>
       </div>
     </form>

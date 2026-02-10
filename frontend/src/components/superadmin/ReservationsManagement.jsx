@@ -3,6 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/authStore';
 import api from '../../api/axios';
 import { LoadingSpinner, Table, StatusBadge } from '../ui';
+import { 
+  ArrowLeft, 
+  Calendar, 
+  Clock, 
+  CheckCircle, 
+  XCircle 
+} from 'lucide-react';
 
 const ReservationsManagement = () => {
   const navigate = useNavigate();
@@ -131,9 +138,10 @@ const ReservationsManagement = () => {
             <div>
               <button
                 onClick={() => navigate('/superadmin')}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium mb-2"
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium mb-2 flex items-center"
               >
-                ← Back to My Dashboard
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Back to My Dashboard
               </button>
               <h1 className="text-2xl font-bold text-gray-900">All Reservations</h1>
               <p className="text-gray-600">View reservations across all client businesses</p>
@@ -161,7 +169,9 @@ const ReservationsManagement = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
-              <div className="bg-blue-500 rounded-lg p-3 text-white text-2xl mr-4">📅</div>
+              <div className="bg-blue-500 rounded-lg p-3 text-white mr-4">
+                <Calendar className="w-6 h-6" />
+              </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Total</p>
                 <p className="text-2xl font-bold text-gray-900">{filteredReservations.length}</p>
@@ -170,7 +180,9 @@ const ReservationsManagement = () => {
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
-              <div className="bg-yellow-500 rounded-lg p-3 text-white text-2xl mr-4">⏳</div>
+              <div className="bg-yellow-500 rounded-lg p-3 text-white mr-4">
+                <Clock className="w-6 h-6" />
+              </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Pending</p>
                 <p className="text-2xl font-bold text-gray-900">
@@ -181,7 +193,9 @@ const ReservationsManagement = () => {
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
-              <div className="bg-green-500 rounded-lg p-3 text-white text-2xl mr-4">✅</div>
+              <div className="bg-green-500 rounded-lg p-3 text-white mr-4">
+                <CheckCircle className="w-6 h-6" />
+              </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Confirmed</p>
                 <p className="text-2xl font-bold text-gray-900">
@@ -192,7 +206,9 @@ const ReservationsManagement = () => {
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
-              <div className="bg-red-500 rounded-lg p-3 text-white text-2xl mr-4">❌</div>
+              <div className="bg-red-500 rounded-lg p-3 text-white mr-4">
+                <XCircle className="w-6 h-6" />
+              </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Canceled</p>
                 <p className="text-2xl font-bold text-gray-900">
