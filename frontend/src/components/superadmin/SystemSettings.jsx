@@ -2,6 +2,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/authStore';
 import { LoadingSpinner } from '../ui';
+import { 
+  ArrowLeft, 
+  Save, 
+  AlertTriangle, 
+  Settings, 
+  Mail, 
+  Calendar, 
+  Building2, 
+  Activity 
+} from 'lucide-react';
 
 const SystemSettings = () => {
   const navigate = useNavigate();
@@ -49,9 +59,10 @@ const SystemSettings = () => {
             <div>
               <button
                 onClick={() => navigate('/superadmin')}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium mb-2"
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium mb-2 flex items-center"
               >
-                ← Back to My Dashboard
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Back to My Dashboard
               </button>
               <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
               <p className="text-gray-600">Configure global platform settings</p>
@@ -59,9 +70,10 @@ const SystemSettings = () => {
             <button
               onClick={handleSave}
               disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 disabled:bg-blue-400"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 disabled:bg-blue-400 flex items-center space-x-2"
             >
-              {loading ? 'Saving...' : 'Save Settings'}
+              <Save className="w-4 h-4" />
+              <span>{loading ? 'Saving...' : 'Save Settings'}</span>
             </button>
           </div>
         </div>
@@ -71,7 +83,10 @@ const SystemSettings = () => {
         <div className="space-y-8">
           {/* General Settings */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">General Settings</h2>
+            <div className="flex items-center mb-4">
+              <Settings className="w-5 h-5 text-gray-500 mr-2" />
+              <h2 className="text-xl font-semibold text-gray-900">General Settings</h2>
+            </div>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -105,7 +120,10 @@ const SystemSettings = () => {
 
           {/* Reservation Settings */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Reservation Settings</h2>
+            <div className="flex items-center mb-4">
+              <Calendar className="w-5 h-5 text-gray-500 mr-2" />
+              <h2 className="text-xl font-semibold text-gray-900">Reservation Settings</h2>
+            </div>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -144,7 +162,10 @@ const SystemSettings = () => {
 
           {/* Email Settings */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Email Settings</h2>
+            <div className="flex items-center mb-4">
+              <Mail className="w-5 h-5 text-gray-500 mr-2" />
+              <h2 className="text-xl font-semibold text-gray-900">Email Settings</h2>
+            </div>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -170,7 +191,10 @@ const SystemSettings = () => {
 
           {/* Business Settings */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Business Settings</h2>
+            <div className="flex items-center mb-4">
+              <Building2 className="w-5 h-5 text-gray-500 mr-2" />
+              <h2 className="text-xl font-semibold text-gray-900">Business Settings</h2>
+            </div>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -196,7 +220,10 @@ const SystemSettings = () => {
 
           {/* System Maintenance */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">System Maintenance</h2>
+            <div className="flex items-center mb-4">
+              <AlertTriangle className="w-5 h-5 text-gray-500 mr-2" />
+              <h2 className="text-xl font-semibold text-gray-900">System Maintenance</h2>
+            </div>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -221,7 +248,7 @@ const SystemSettings = () => {
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <div className="flex">
                     <div className="flex-shrink-0">
-                      <span className="text-red-400 text-xl">⚠️</span>
+                      <AlertTriangle className="w-5 h-5 text-red-400" />
                     </div>
                     <div className="ml-3">
                       <h3 className="text-sm font-medium text-red-800">
@@ -242,7 +269,10 @@ const SystemSettings = () => {
 
           {/* Platform Statistics */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Platform Statistics</h2>
+            <div className="flex items-center mb-4">
+              <Activity className="w-5 h-5 text-gray-500 mr-2" />
+              <h2 className="text-xl font-semibold text-gray-900">Platform Statistics</h2>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600">12</div>

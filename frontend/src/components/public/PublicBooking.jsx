@@ -307,15 +307,6 @@ const PublicBooking = () => {
 
             {/* Footer Info */}
             <div className="mt-8 pt-6 border-t border-gray-200">
-              <div className="text-center mb-4">
-                <button
-                  type="button"
-                  onClick={() => setShowLookup(true)}
-                  className="text-blue-600 hover:text-blue-700 font-semibold"
-                >
-                  View My Existing Reservations
-                </button>
-              </div>
               <div className="text-center text-sm text-gray-600">
                 <p>
                   By booking an appointment, you agree to be contacted via phone.
