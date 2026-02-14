@@ -19,10 +19,14 @@ Welcome to the Fade District Multi-Tenant SaaS Reservation System documentation.
 
 ### 📧 Communication Systems
 - **[EMAIL_SYSTEM.md](EMAIL_SYSTEM.md)** - Email notification system documentation
+- **[WEBSOCKET_REALTIME_SYSTEM.md](WEBSOCKET_REALTIME_SYSTEM.md)** - Real-time WebSocket updates documentation
+- **[WEBSOCKET_SETUP_GUIDE.md](WEBSOCKET_SETUP_GUIDE.md)** - WebSocket setup and testing guide
 - **[CELERY_STATUS_AUTOMATION.md](CELERY_STATUS_AUTOMATION.md)** - Background task automation
 
 ### 🎯 Feature Guides
 - **[BUSINESS_MANAGEMENT_GUIDE.md](BUSINESS_MANAGEMENT_GUIDE.md)** - Complete CRUD operations guide
+- **[BUSINESS_OWNER_SETUP.md](BUSINESS_OWNER_SETUP.md)** - How to create businesses with owner accounts
+- **[LOGO_DISPLAY_COMPLETE.md](LOGO_DISPLAY_COMPLETE.md)** - Business logo display across all pages
 - **[PUBLIC_BOOKING_SYSTEM.md](PUBLIC_BOOKING_SYSTEM.md)** - Public booking interface documentation
 
 ### ⚡ Performance & Optimization
@@ -58,6 +62,8 @@ Welcome to the Fade District Multi-Tenant SaaS Reservation System documentation.
 ### For System Administrators
 - [MULTI_TENANT_SAAS_DOCUMENTATION.md](MULTI_TENANT_SAAS_DOCUMENTATION.md) - System architecture
 - [EMAIL_SYSTEM.md](EMAIL_SYSTEM.md) - Email configuration
+- [WEBSOCKET_REALTIME_SYSTEM.md](WEBSOCKET_REALTIME_SYSTEM.md) - Real-time updates system
+- [WEBSOCKET_SETUP_GUIDE.md](WEBSOCKET_SETUP_GUIDE.md) - WebSocket setup instructions
 - [CELERY_STATUS_AUTOMATION.md](CELERY_STATUS_AUTOMATION.md) - Background tasks
 
 ### For Business Users
@@ -82,6 +88,8 @@ For questions about specific topics:
 - **Architecture Questions**: See [MULTI_TENANT_SAAS_DOCUMENTATION.md](MULTI_TENANT_SAAS_DOCUMENTATION.md)
 - **User Access Issues**: See [NAVIGATION_AND_ROLES.md](NAVIGATION_AND_ROLES.md)
 - **Email Problems**: See [EMAIL_SYSTEM.md](EMAIL_SYSTEM.md)
+- **WebSocket Issues**: See [WEBSOCKET_SETUP_GUIDE.md](WEBSOCKET_SETUP_GUIDE.md)
+- **Real-Time Updates**: See [WEBSOCKET_REALTIME_SYSTEM.md](WEBSOCKET_REALTIME_SYSTEM.md)
 - **Analytics & Charts**: See [ANALYTICS_SYSTEM.md](ANALYTICS_SYSTEM.md)
 - **Performance Issues**: See [OPTIMIZATION_SUMMARY.md](OPTIMIZATION_SUMMARY.md)
 - **Testing Issues**: See [TEST_CREDENTIALS.md](TEST_CREDENTIALS.md)

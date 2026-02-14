@@ -180,8 +180,6 @@ class BusinessViewSet(viewsets.ModelViewSet):
             'Salon': ['salon'],
             'Barbershop': ['barber', 'barbershop'],
             'Spa': ['spa'],
-            'Restaurant': ['restaurant', 'food'],
-            'Fitness': ['gym', 'fitness'],
         }
 
         type_counts = {key: 0 for key in TYPE_KEYWORDS}

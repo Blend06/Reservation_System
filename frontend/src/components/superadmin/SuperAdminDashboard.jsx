@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/authStore';
+import { useWebSocketContext } from '../../context/WebSocketContext';
 import api from '../../api/axios';
 import { LoadingSpinner } from '../ui';
+import NotificationBell from '../ui/NotificationBell';
 import { 
   Building2, 
   CheckCircle, 
@@ -37,6 +39,7 @@ import {
 const SuperAdminDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { dashboardUpdates } = useWebSocketContext();
   const [stats, setStats] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +54,21 @@ const SuperAdminDashboard = () => {
     fetchDashboardData();
   }, [user, navigate]);
 
+  // Listen for real-time WebSocket updates
+  useEffect(() => {
+    if (dashboardUpdates.length > 0) {
+      const latestUpdate = dashboardUpdates[0];
+      console.log('Received real-time update:', latestUpdate);
+      
+      // Refresh data based on update type
+      if (latestUpdate.type === 'business_created' || 
+          latestUpdate.type === 'business_updated' ||
+          latestUpdate.type === 'reservation_created') {
+        fetchDashboardData();
+      }
+    }
+  }, [dashboardUpdates]);
+
   const fetchDashboardData = async () => {
     try {
       const [statsResponse, analyticsResponse] = await Promise.all([
@@ -61,47 +79,8 @@ const SuperAdminDashboard = () => {
       setAnalytics(analyticsResponse.data);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      // If analytics endpoint doesn't exist, generate mock data
-      if (error.response?.status === 404) {
-        setAnalytics(generateMockAnalytics());
-      }
     }
     setLoading(false);
-  };
-
-  const generateMockAnalytics = () => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    const businessGrowth = months.map((month, index) => ({
-      month,
-      businesses: Math.floor(Math.random() * 10) + index * 2,
-      reservations: Math.floor(Math.random() * 100) + index * 20,
-      revenue: Math.floor(Math.random() * 5000) + index * 1000
-    }));
-
-    const businessTypes = [
-      { name: 'Salons', value: 35, color: '#3B82F6' },
-      { name: 'Spas', value: 25, color: '#10B981' },
-      { name: 'Restaurants', value: 20, color: '#F59E0B' },
-      { name: 'Fitness', value: 15, color: '#EF4444' },
-      { name: 'Others', value: 5, color: '#8B5CF6' }
-    ];
-
-    const reservationTrends = months.map((month, index) => ({
-      month,
-      confirmed: Math.floor(Math.random() * 50) + 30,
-      pending: Math.floor(Math.random() * 20) + 10,
-      canceled: Math.floor(Math.random() * 15) + 5
-    }));
-
-    return {
-      businessGrowth,
-      businessTypes,
-      reservationTrends,
-      totalRevenue: 45000,
-      monthlyGrowth: 12.5,
-      activeBusinesses: 42,
-      totalReservations: 1234
-    };
   };
 
   const handleLogout = () => {
@@ -125,13 +104,14 @@ const SuperAdminDashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Welcome, {user?.first_name}</span>
+              <NotificationBell />
               <button
                 onClick={handleLogout}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2"
               >
-              <LogOut className="w-4 h-4" />
-              <span>Logout</span>
-            </button>
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </button>
             </div>
           </div>
         </div>
@@ -176,6 +156,73 @@ const SuperAdminDashboard = () => {
             trendValue="12.3%"
             onClick={() => navigate('/superadmin/reservations')}
           />
+        </div>
+
+        {/* Quick Overview Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Recent clients (businesses) */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-800">Recent clients (businesses)</h2>
+              <button
+                onClick={() => navigate('/superadmin/businesses')}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                View all
+              </button>
+            </div>
+            <div className="space-y-3">
+              {stats?.recent_businesses?.map((business) => (
+                <div key={business.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition duration-200 cursor-pointer" onClick={() => navigate('/superadmin/businesses')}>
+                  <div>
+                    <h3 className="font-medium text-gray-900">{business.name}</h3>
+                    <p className="text-sm text-gray-600">{business.full_domain}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      business.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {business.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {(!stats?.recent_businesses || stats.recent_businesses.length === 0) && (
+                <p className="text-gray-500 text-center py-8">No businesses yet</p>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick actions</h2>
+            <div className="space-y-3">
+              <ActionButton
+                title="Manage my clients (businesses)"
+                description="View and manage all client businesses"
+                icon={<Building2 className="w-6 h-6" />}
+                onClick={() => navigate('/superadmin/businesses')}
+              />
+              <ActionButton
+                title="Add new client (business)"
+                description="Create a new business on the platform"
+                icon={<Plus className="w-6 h-6" />}
+                onClick={() => navigate('/superadmin/businesses')}
+              />
+              <ActionButton
+                title="View all reservations"
+                description="Reservations across all client businesses"
+                icon={<BarChart3 className="w-6 h-6" />}
+                onClick={() => navigate('/superadmin/reservations')}
+              />
+              <ActionButton
+                title="System settings"
+                description="Configure global system settings"
+                icon={<Settings className="w-6 h-6" />}
+                onClick={() => navigate('/superadmin/settings')}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Analytics Charts */}
@@ -274,70 +321,6 @@ const SuperAdminDashboard = () => {
             </div>
           </div>
         )}
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Recent clients (businesses) */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">Recent clients (businesses)</h2>
-              <button
-                onClick={() => navigate('/superadmin/businesses')}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                View all
-              </button>
-            </div>
-            <div className="space-y-3">
-              {stats?.recent_businesses?.map((business) => (
-                <div key={business.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">{business.name}</h3>
-                    <p className="text-sm text-gray-600">{business.full_domain}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      business.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {business.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick actions</h2>
-            <div className="space-y-3">
-              <ActionButton
-                title="Manage my clients (businesses)"
-                description="View and manage all client businesses"
-                icon={<Building2 className="w-6 h-6" />}
-                onClick={() => navigate('/superadmin/businesses')}
-              />
-              <ActionButton
-                title="Add new client (business)"
-                description="Create a new business on the platform"
-                icon={<Plus className="w-6 h-6" />}
-                onClick={() => navigate('/superadmin/businesses')}
-              />
-              <ActionButton
-                title="View all reservations"
-                description="Reservations across all client businesses"
-                icon={<BarChart3 className="w-6 h-6" />}
-                onClick={() => navigate('/superadmin/reservations')}
-              />
-              <ActionButton
-                title="System settings"
-                description="Configure global system settings"
-                icon={<Settings className="w-6 h-6" />}
-                onClick={() => navigate('/superadmin/settings')}
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

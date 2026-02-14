@@ -7,6 +7,14 @@ class Business(models.Model):
     Business model for multi-tenant SaaS
     Each business gets their own subdomain and isolated data
     """
+    
+    # Business Type Keywords for categorization
+    TYPE_KEYWORDS = {
+        'Salon': ['salon', 'hair', 'beauty'],
+        'Barbershop': ['barber', 'barbershop'],
+        'Spa': ['spa', 'massage', 'wellness'],
+    }
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100, help_text="Business name")
     subdomain = models.CharField(
@@ -36,7 +44,8 @@ class Business(models.Model):
     
     # Branding
     primary_color = models.CharField(max_length=7, default='#3B82F6', help_text="Primary brand color (hex)")
-    logo_url = models.URLField(blank=True, help_text="Logo URL (optional)")
+    logo = models.ImageField(upload_to='business_logos/', blank=True, null=True, help_text="Business logo (PNG file)")
+    logo_url = models.URLField(blank=True, help_text="Logo URL (alternative to file upload)")
     
     # Status
     is_active = models.BooleanField(default=True)
@@ -73,3 +82,22 @@ class Business(models.Model):
     def admin_email(self):
         """Return the email address for admin notifications"""
         return self.email_from_address or self.email
+    
+    def get_logo_url(self):
+        """Return logo URL - either from uploaded file or URL field"""
+        if self.logo:
+            return self.logo.url
+        return self.logo_url or None
+    
+    def get_business_type(self):
+        """
+        Determine business type based on name and subdomain keywords
+        Returns the matched type or 'Others' if no match found
+        """
+        search_text = f"{self.name} {self.subdomain}".lower()
+        
+        for business_type, keywords in self.TYPE_KEYWORDS.items():
+            if any(keyword in search_text for keyword in keywords):
+                return business_type
+        
+        return 'Others'

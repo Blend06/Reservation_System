@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../api/axios';
 import { LoadingSpinner } from '../ui';
@@ -14,6 +14,7 @@ const PublicBooking = () => {
   const [showLookup, setShowLookup] = useState(false);
   const [lookupEmail, setLookupEmail] = useState('');
   const [lookupResults, setLookupResults] = useState(null);
+  const [business, setBusiness] = useState(null);
 
   const [formData, setFormData] = useState({
     customer_name: '',
@@ -22,6 +23,24 @@ const PublicBooking = () => {
     time: '',
     notes: ''
   });
+
+  // Fetch business info on mount
+  useEffect(() => {
+    const fetchBusiness = async () => {
+      try {
+        const subdomain = subdomainFromUrl || getSubdomainFromHost();
+        if (subdomain) {
+          const response = await api.get(`businesses/?subdomain=${subdomain}`);
+          if (response.data && response.data.length > 0) {
+            setBusiness(response.data[0]);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching business:', error);
+      }
+    };
+    fetchBusiness();
+  }, [subdomainFromUrl]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -219,7 +238,19 @@ const PublicBooking = () => {
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Book Your Appointment</h1>
+            {business?.logo_url && (
+              <div className="flex justify-center mb-6">
+                <img 
+                  src={business.logo_url} 
+                  alt={business.name}
+                  className="h-20 w-auto object-contain"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              </div>
+            )}
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              {business?.name ? `Book at ${business.name}` : 'Book Your Appointment'}
+            </h1>
             <p className="text-xl text-gray-600">
               Schedule your appointment with us. We'll contact you to confirm your booking.
             </p>
