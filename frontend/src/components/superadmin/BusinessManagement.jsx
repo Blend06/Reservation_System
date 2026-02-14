@@ -461,9 +461,15 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
     email_from_name: '',
     email_from_address: '',
     primary_color: '#3B82F6',
-    logo_url: ''
+    logo_url: '',
+    // Owner information
+    owner_email: '',
+    owner_first_name: '',
+    owner_last_name: '',
+    owner_password: ''
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

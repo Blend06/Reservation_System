@@ -53,11 +53,21 @@ const BusinessDashboard = () => {
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Your dashboard</h1>
-              <p className="text-gray-600">
-                {user?.business?.name} – Manage your clients (people who make reservations)
-              </p>
+            <div className="flex items-center space-x-4">
+              {user?.business?.logo_url && (
+                <img 
+                  src={user.business.logo_url} 
+                  alt={user.business.name}
+                  className="h-12 w-auto object-contain"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Your dashboard</h1>
+                <p className="text-gray-600">
+                  {user?.business?.name} – Manage your clients (people who make reservations)
+                </p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
