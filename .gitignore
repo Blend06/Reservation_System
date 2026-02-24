@@ -132,6 +132,10 @@ celerybeat-schedule
 celerybeat-schedule.*
 celerybeat.pid
 
+# Media files (user uploads)
+backend/media/
+media/
+
 # SageMath parsed files
 *.sage.py
 
