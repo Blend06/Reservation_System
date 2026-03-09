@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/authStore';
-import { useWebSocketContext } from '../../context/WebSocketContext';
 import api from '../../api/axios';
 import { LoadingSpinner } from '../ui';
-import NotificationBell from '../ui/NotificationBell';
 import { 
   Building2, 
   CheckCircle, 
@@ -39,7 +37,6 @@ import {
 const SuperAdminDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { dashboardUpdates } = useWebSocketContext();
   const [stats, setStats] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,21 +50,6 @@ const SuperAdminDashboard = () => {
     
     fetchDashboardData();
   }, [user, navigate]);
-
-  // Listen for real-time WebSocket updates
-  useEffect(() => {
-    if (dashboardUpdates.length > 0) {
-      const latestUpdate = dashboardUpdates[0];
-      console.log('Received real-time update:', latestUpdate);
-      
-      // Refresh data based on update type
-      if (latestUpdate.type === 'business_created' || 
-          latestUpdate.type === 'business_updated' ||
-          latestUpdate.type === 'reservation_created') {
-        fetchDashboardData();
-      }
-    }
-  }, [dashboardUpdates]);
 
   const fetchDashboardData = async () => {
     try {
@@ -104,7 +86,6 @@ const SuperAdminDashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Welcome, {user?.first_name}</span>
-              <NotificationBell />
               <button
                 onClick={handleLogout}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2"

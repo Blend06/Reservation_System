@@ -15,14 +15,6 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-
   backend:
     build: ./backend
     ports:
@@ -31,76 +23,25 @@ services:
       - ./backend:/app
     environment:
       - DEBUG=1
-      - REDIS_URL=redis://redis:6379/0
       - DB_NAME=reservation_db
       - DB_USER=postgres
       - DB_PASSWORD=password
       - DB_HOST=postgres
       - DB_PORT=5432
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_WHATSAPP_NUMBER=${TWILIO_WHATSAPP_NUMBER}
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_started
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: >
       sh -c "python manage.py makemigrations &&
              python manage.py migrate &&
-             daphne -b 0.0.0.0 -p 8000 backend.asgi:application"
-
-
-  celery-worker:
-    build: ./backend
-    volumes:
-      - ./backend:/app
-    environment:
-      - DEBUG=1
-      - REDIS_URL=redis://redis:6379/0
-      - DB_NAME=reservation_db
-      - DB_USER=postgres
-      - DB_PASSWORD=password
-      - DB_HOST=postgres
-      - DB_PORT=5432
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      backend:
-        condition: service_started
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    command: >
-      sh -c "sleep 30 &&
-             celery -A backend worker --loglevel=info --pool=solo"
-    restart: unless-stopped
-
-  celery-beat:
-    build: ./backend
-    volumes:
-      - ./backend:/app
-    environment:
-      - DEBUG=1
-      - REDIS_URL=redis://redis:6379/0
-      - DB_NAME=reservation_db
-      - DB_USER=postgres
-      - DB_PASSWORD=password
-      - DB_HOST=postgres
-      - DB_PORT=5432
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      backend:
-        condition: service_started
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    command: >
-      sh -c "sleep 35 &&
-             celery -A backend beat --loglevel=info"
-    restart: unless-stopped
+             gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
 
   frontend:
     build: ./frontend
@@ -115,4 +56,3 @@ services:
 
 volumes:
   postgres_data:
-  redis_data:

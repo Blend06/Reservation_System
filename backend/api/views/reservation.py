@@ -4,6 +4,11 @@ from rest_framework.response import Response
 from api.models import Reservation, Business
 from api.serializers import ReservationSerializer
 from api.middleware import get_current_tenant
+from api.utils.whatsapp_utils import send_whatsapp_message
+from api.utils.email_utils import send_new_reservation_email
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def get_tenant_from_request(request):
@@ -74,13 +79,27 @@ class ReservationViewSet(viewsets.ModelViewSet):
 
         if tenant:
             # Subdomain context or subdomain from frontend - no auth required
-            serializer.save(business=tenant, status='pending')
+            reservation = serializer.save(business=tenant, status='pending')
+            
+            # Send email notification to business owner
+            try:
+                send_new_reservation_email(reservation)
+                logger.info(f'✅ Email sent to business owner for reservation {reservation.id}')
+            except Exception as e:
+                logger.error(f'❌ Failed to send email for reservation {reservation.id}: {str(e)}')
         else:
             # Main domain, no subdomain - require authentication and business
             if not self.request.user.is_authenticated:
                 raise PermissionError("Authentication required")
             if self.request.user.is_business_owner and self.request.user.business:
-                serializer.save(business=self.request.user.business)
+                reservation = serializer.save(business=self.request.user.business)
+                
+                # Send email notification to business owner
+                try:
+                    send_new_reservation_email(reservation)
+                    logger.info(f'✅ Email sent to business owner for reservation {reservation.id}')
+                except Exception as e:
+                    logger.error(f'❌ Failed to send email for reservation {reservation.id}: {str(e)}')
             else:
                 raise PermissionError("No business context available")
 
@@ -161,3 +180,80 @@ class ReservationViewSet(viewsets.ModelViewSet):
             'reservations': serializer.data,
             'business_name': tenant.name
         })
+    
+    @action(detail=True, methods=['post'])
+    def update_status(self, request, pk=None):
+        """
+        Update reservation status and send WhatsApp notification to customer
+        Returns detailed feedback about WhatsApp delivery status
+        """
+        reservation = self.get_object()
+        new_status = request.data.get('status')
+        
+        # Validate status
+        if new_status not in ['pending', 'confirmed', 'rejected', 'canceled']:
+            return Response(
+                {'error': 'Invalid status. Must be: pending, confirmed, rejected, or canceled'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check permissions
+        user = request.user
+        if not user.is_authenticated:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        if not (user.is_super_admin or (user.is_business_owner and user.business == reservation.business)):
+            return Response(
+                {'error': 'Permission denied'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Update status
+        old_status = reservation.status
+        reservation.status = new_status
+        reservation.save()
+        
+        logger.info(f'📝 Reservation {reservation.id} status updated: {old_status} → {new_status}')
+        
+        # Send WhatsApp notification for confirmed/rejected status
+        whatsapp_sent = False
+        whatsapp_error = None
+        
+        if new_status in ['confirmed', 'rejected']:
+            try:
+                whatsapp_sent = send_whatsapp_message(
+                    to_phone=reservation.customer_phone,
+                    message_type=new_status,
+                    reservation=reservation,
+                    business=reservation.business
+                )
+                
+                if whatsapp_sent:
+                    logger.info(f'✅ WhatsApp sent to {reservation.customer_phone} for reservation {reservation.id}')
+                else:
+                    logger.warning(f'⚠️ WhatsApp not sent (no provider configured) for reservation {reservation.id}')
+                    whatsapp_error = 'WhatsApp provider not configured'
+                    
+            except Exception as e:
+                logger.error(f'❌ WhatsApp failed for reservation {reservation.id}: {str(e)}')
+                whatsapp_error = str(e)
+        
+        # Prepare response with detailed feedback
+        serializer = self.get_serializer(reservation)
+        response_data = {
+            'reservation': serializer.data,
+            'status_updated': True,
+            'old_status': old_status,
+            'new_status': new_status,
+            'whatsapp_notification': {
+                'sent': whatsapp_sent,
+                'required': new_status in ['confirmed', 'rejected'],
+                'error': whatsapp_error,
+                'customer_phone': reservation.customer_phone
+            }
+        }
+        
+        return Response(response_data, status=status.HTTP_200_OK)

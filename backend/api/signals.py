@@ -1,27 +1,20 @@
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import Business, Reservation
-from .websocket_utils import send_dashboard_update
-from .serializers import BusinessListSerializer, ReservationSerializer
+import logging
+
+logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=Business)
 def business_saved(sender, instance, created, **kwargs):
+    """Log business creation/update"""
     if created:
-        send_dashboard_update('business_created', {
-            'business': BusinessListSerializer(instance).data,
-            'message': f'New business "{instance.name}" created'
-        })
+        logger.info(f'New business created: {instance.name}')
     else:
-        send_dashboard_update('business_updated', {
-            'business': BusinessListSerializer(instance).data,
-            'message': f'Business "{instance.name}" updated'
-        })
+        logger.info(f'Business updated: {instance.name}')
 
 @receiver(post_save, sender=Reservation)
 def reservation_saved(sender, instance, created, **kwargs):
+    """Log reservation creation"""
     if created:
-        send_dashboard_update('reservation_created', {
-            'reservation': ReservationSerializer(instance).data,
-            'business_name': instance.business.name,
-            'message': f'New reservation for {instance.business.name}'
-        })
+        logger.info(f'New reservation created for {instance.business.name}')
