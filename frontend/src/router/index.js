@@ -12,6 +12,7 @@ import SystemSettings from '../components/superadmin/SystemSettings';
 import BusinessDashboard from '../components/business/BusinessDashboard';
 import PublicBooking from '../components/public/PublicBooking';
 import LandingPage from '../components/LandingPage';
+import DemoLandingPage from '../components/DemoLandingPage';
 import { useAuth } from '../auth/authStore';
 
 // Detect if we're on a subdomain
@@ -191,7 +192,10 @@ const AppRoutes = () => {
         } 
       />
       
-      {/* Root Route - Landing page when not authenticated, redirect when logged in */}
+      {/* Demo Landing Page - Static Business Dashboard Preview */}
+      <Route path="/demo" element={<DemoLandingPage />} />
+      
+      {/* Root Route - Original Landing page when not authenticated, redirect when logged in */}
       <Route 
         path="/" 
         element={

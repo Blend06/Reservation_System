@@ -35,7 +35,6 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne', 
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -45,23 +44,9 @@ INSTALLED_APPS = [
     'api',
     'rest_framework',
     'corsheaders',
-    'django_celery_beat',
-    'channels',
 ]
 
 AUTH_USER_MODEL = "api.User"
-
-ASGI_APPLICATION = 'backend.asgi.application'
-
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [os.getenv('REDIS_URL', 'redis://redis:6379/0')],
-        },
-    },
-}
-
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.security.SecurityMiddleware',
@@ -175,7 +160,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
 ]
 
-# Email Settings
+# Email Settings (Gmail SMTP - Synchronous)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -185,20 +170,11 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER')
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL')
 
-# Celery Settings
-CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
-CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379')
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = TIME_ZONE
+# WhatsApp Settings - Twilio
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID', '')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', '')
+TWILIO_WHATSAPP_NUMBER = os.getenv('TWILIO_WHATSAPP_NUMBER', '')
 
-# Celery Beat Settings for Scheduled Tasks
-from celery.schedules import crontab
-
-CELERY_BEAT_SCHEDULE = {
-    'auto-complete-reservations': {
-        'task': 'api.tasks.status_tasks.check_overdue_reservations',
-        'schedule': crontab(minute='*/5'),  # Run every 5 minutes
-    },
-}
+# WhatsApp Settings - Ultramsg (Alternative for testing)
+ULTRAMSG_INSTANCE_ID = os.getenv('ULTRAMSG_INSTANCE_ID', '')
+ULTRAMSG_TOKEN = os.getenv('ULTRAMSG_TOKEN', '')

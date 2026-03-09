@@ -462,6 +462,9 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
     email_from_address: '',
     primary_color: '#3B82F6',
     logo_url: '',
+    logo: null,
+    subscription_status: 'active',
+    subscription_expires: '',
     // Owner information
     owner_email: '',
     owner_first_name: '',
@@ -470,16 +473,37 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [logoOption, setLogoOption] = useState('url'); // 'url' or 'file'
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     
     try {
-      await api.post('businesses/', formData);
+      // Create FormData for file upload support
+      const submitData = new FormData();
+      
+      // Add all text fields
+      Object.keys(formData).forEach(key => {
+        if (key === 'logo') {
+          // Handle file separately
+          if (formData.logo) {
+            submitData.append('logo', formData.logo);
+          }
+        } else if (formData[key] !== null && formData[key] !== '') {
+          submitData.append(key, formData[key]);
+        }
+      });
+      
+      await api.post('businesses/', submitData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       onSuccess();
     } catch (error) {
       console.error('Error creating business:', error);
+      alert('Error creating business. Please check all fields.');
     }
     setLoading(false);
   };
@@ -490,6 +514,26 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        alert('File size must be less than 2MB');
+        return;
+      }
+      setFormData(prev => ({
+        ...prev,
+        logo: file
+      }));
+    }
   };
 
   return (
@@ -626,30 +670,149 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Logo URL (optional)
-            <span className="text-xs text-gray-500 block">Direct link to business logo image</span>
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Subscription Expires (optional)</label>
           <input
-            type="url"
-            name="logo_url"
-            value={formData.logo_url}
+            type="date"
+            name="subscription_expires"
+            value={formData.subscription_expires}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="https://example.com/logo.png"
           />
-          {formData.logo_url && (
-            <div className="mt-2">
-              <img 
-                src={formData.logo_url} 
-                alt="Logo preview" 
-                className="h-12 w-auto border border-gray-200 rounded"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
+        </div>
+      </div>
+
+      {/* Logo Section - URL or File Upload */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Business Logo</label>
+        <div className="flex gap-4 mb-3">
+          <button
+            type="button"
+            onClick={() => setLogoOption('url')}
+            className={`px-4 py-2 rounded-md ${
+              logoOption === 'url'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            URL
+          </button>
+          <button
+            type="button"
+            onClick={() => setLogoOption('file')}
+            className={`px-4 py-2 rounded-md ${
+              logoOption === 'file'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Upload PNG
+          </button>
+        </div>
+
+        {logoOption === 'url' ? (
+          <div>
+            <input
+              type="url"
+              name="logo_url"
+              value={formData.logo_url}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="https://example.com/logo.png"
+            />
+            {formData.logo_url && (
+              <div className="mt-2">
+                <img 
+                  src={formData.logo_url} 
+                  alt="Logo preview" 
+                  className="h-16 w-auto border border-gray-200 rounded p-2"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/jpg"
+              onChange={handleFileChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">PNG, JPG or JPEG. Max 2MB.</p>
+            {formData.logo && (
+              <div className="mt-2">
+                <p className="text-sm text-green-600">✓ File selected: {formData.logo.name}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Owner Account Information */}
+      <div className="border-t pt-4 mt-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Business Owner Account</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Owner Email</label>
+            <input
+              type="email"
+              name="owner_email"
+              value={formData.owner_email}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="owner@example.com"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Owner Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="owner_password"
+                value={formData.owner_password}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="••••••••"
+                required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
             </div>
-          )}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Owner First Name</label>
+            <input
+              type="text"
+              name="owner_first_name"
+              value={formData.owner_first_name}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="John"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Owner Last Name</label>
+            <input
+              type="text"
+              name="owner_last_name"
+              value={formData.owner_last_name}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Doe"
+              required
+            />
+          </div>
         </div>
       </div>
 
