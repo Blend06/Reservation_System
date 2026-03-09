@@ -300,7 +300,7 @@ const DemoLandingPage = () => {
       <div className="max-w-7xl mx-auto px-6 pb-16">
         <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-2xl p-12 text-center text-white shadow-xl">
           <TrendingUp className="w-12 h-12 mx-auto mb-5 opacity-90" />
-          <h2 className="text-3xl font-bold mb-3">Gati për të Rritur Biznesin Tuaj?</h2>
+          <h2 className="text-3xl font-bold mb-3">Gati për të Dixhitalizuar Biznesin Tuaj?</h2>
           <p className="text-lg opacity-90 mb-8">
             Filloni të menaxhoni rezervimet tuaja në mënyrë profesionale sot!
           </p>
