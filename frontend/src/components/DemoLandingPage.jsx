@@ -77,7 +77,7 @@ const DemoLandingPage = () => {
       {/* Demo Banner */}
       <div className="bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 text-white text-center py-3 px-4 text-sm font-medium tracking-wide flex items-center justify-center gap-2">
         <Sparkles className="w-4 h-4" />
-        Kjo është një DEMO e Panelit tuaj të Biznesit • Provojeni FALAS për 30 ditë!
+        Kjo është një DEMO e Panelit tuaj të Biznesit!
         <Sparkles className="w-4 h-4" />
       </div>
 
@@ -305,7 +305,7 @@ const DemoLandingPage = () => {
             Filloni të menaxhoni rezervimet tuaja në mënyrë profesionale sot!
           </p>
           <p className="text-sm opacity-90 mt-6">
-            Nuk kërkohet kartë krediti • Na kontaktoni për bashkëpunim: <span className="font-bold">+383 45 853 844</span>
+            • Na kontaktoni për bashkëpunim: <span className="font-bold">+383 45 853 844</span>
           </p>
         </div>
       </div>
