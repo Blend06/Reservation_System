@@ -13,6 +13,8 @@ import BusinessDashboard from '../components/business/BusinessDashboard';
 import PublicBooking from '../components/public/PublicBooking';
 import LandingPage from '../components/LandingPage';
 import DemoLandingPage from '../components/DemoLandingPage';
+import TermsOfService from '../components/TermsOfService';
+import PrivacyPolicy from '../components/PrivacyPolicy';
 import { useAuth } from '../auth/authStore';
 
 // Detect if we're on a subdomain
@@ -192,10 +194,14 @@ const AppRoutes = () => {
         } 
       />
       
-      {/* Demo Landing Page - Static Business Dashboard Preview */}
+      {/* Demo Landing Page - Now the main landing page */}
       <Route path="/demo" element={<DemoLandingPage />} />
       
-      {/* Root Route - Original Landing page when not authenticated, redirect when logged in */}
+      {/* Terms and Privacy Pages */}
+      <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      
+      {/* Root Route - Show Demo as main landing page */}
       <Route 
         path="/" 
         element={
@@ -204,7 +210,7 @@ const AppRoutes = () => {
              user?.is_business_owner ? <Navigate to="/business/dashboard" /> :
              user?.is_admin ? <Navigate to="/superadmin/dashboard" /> :
              <Navigate to="/homepage" />) :
-            <LandingPage />
+            <DemoLandingPage />
         } 
       />
       {/* Catch-all so "No routes matched" never appears in console */}
