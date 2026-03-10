@@ -24,12 +24,24 @@ load_dotenv(BASE_DIR / ".env")
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0d(s-wky0k@=pg_)jd=5+x4z99=de==u1xouqvzie!dd21jmoo'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-0d(s-wky0k@=pg_)jd=5+x4z99=de==u1xouqvzie!dd21jmoo')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0',
+    '.railway.app',  # Railway domains
+    '.vercel.app',   # Vercel preview domains
+]
+
+# Add custom domain if provided
+if os.environ.get('CUSTOM_DOMAIN'):
+    ALLOWED_HOSTS.append(os.environ.get('CUSTOM_DOMAIN'))
+    ALLOWED_HOSTS.append(f"*.{os.environ.get('CUSTOM_DOMAIN')}")
+    ALLOWED_HOSTS.append(f"api.{os.environ.get('CUSTOM_DOMAIN')}")
 
 
 # Application definition
@@ -83,16 +95,29 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "reservation_db"),
-        "USER": os.getenv("DB_USER", "postgres"),
-        "PASSWORD": os.getenv("DB_PASSWORD", "password"),
-        "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "5432"),
+# Use Railway PostgreSQL in production, local PostgreSQL in development
+if os.environ.get('DATABASE_URL'):
+    # Production: Railway provides DATABASE_URL
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    # Development: Local PostgreSQL
+    DATABASES = {
+        'default': {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("DB_NAME", "reservation_db"),
+            "USER": os.getenv("DB_USER", "postgres"),
+            "PASSWORD": os.getenv("DB_PASSWORD", "password"),
+            "HOST": os.getenv("DB_HOST", "localhost"),
+            "PORT": os.getenv("DB_PORT", "5432"),
+        }
+    }
 
 
 # Password validation
@@ -155,10 +180,24 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
+# CORS Settings - Allow frontend to access backend
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  
     "http://127.0.0.1:3000",
 ]
+
+# Add production frontend URLs if provided
+if os.environ.get('FRONTEND_URL'):
+    CORS_ALLOWED_ORIGINS.append(os.environ.get('FRONTEND_URL'))
+    CORS_ALLOWED_ORIGINS.append(os.environ.get('FRONTEND_URL').replace('https://', 'https://www.'))
+
+# Allow Vercel preview deployments
+if not DEBUG:
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^https://.*\.vercel\.app$",
+    ]
+
+CORS_ALLOW_CREDENTIALS = True
 
 # Email Settings (Gmail SMTP - Synchronous)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
