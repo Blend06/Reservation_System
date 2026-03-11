@@ -34,7 +34,6 @@ const TermsOfService = () => {
             <section>
               <h2 className="text-xl font-bold text-gray-900 mb-3">3. Kushtet e Pagesës</h2>
               <ul className="list-disc list-inside space-y-2">
-                <li>Tarifa mujore: €25/muaj për biznes</li>
                 <li>Pagesa kryhet në fillim të çdo muaji</li>
                 <li>Nuk ka rimbursim për muajt e pjesshëm</li>
                 <li>Nëse pagesa dështon, shërbimi pezullohet pas 7 ditëve</li>
