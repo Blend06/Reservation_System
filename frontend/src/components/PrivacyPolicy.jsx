@@ -69,13 +69,12 @@ const PrivacyPolicy = () => {
                 <li>Serverë të sigurt me akses të kufizuar</li>
                 <li>Backup-e të rregullta</li>
                 <li>Fjalëkalime të enkriptuara</li>
-                <li>Monitorim 24/7 për aktivitete të dyshimta</li>
               </ul>
             </section>
 
             {/* Section 5 */}
             <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-3">5. të Drejtat Tuaja</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-3">5. Drejtat Tuaja</h2>
               <p className="mb-2">Ju keni të drejtë të:</p>
               <ul className="list-disc list-inside space-y-2">
                 <li><strong>Aksesoni:</strong> Të shihni të gjitha të dhënat që kemi për ju</li>
@@ -84,9 +83,6 @@ const PrivacyPolicy = () => {
                 <li><strong>Eksportoni:</strong> Të shkarkoni të dhënat tuaja në format CSV</li>
                 <li><strong>Kundërshtoni:</strong> Të refuzoni përpunimin për qëllime specifike</li>
               </ul>
-              <p className="mt-4">
-                Për të ushtruar këto të drejta, kontaktoni: support@reservo.com
-              </p>
             </section>
 
             {/* Section 6 */}
@@ -114,28 +110,20 @@ const PrivacyPolicy = () => {
               </ul>
             </section>
 
+
+
             {/* Section 8 */}
             <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-3">8. Privatësia e Fëmijëve</h2>
-              <p>
-                Shërbimi ynë nuk është i destinuar për persona nën 18 vjeç. 
-                Ne nuk mbledhim me vetëdije informacion nga fëmijët. 
-                Nëse zbulojmë se kemi mbledhur të dhëna nga një fëmijë, do t'i fshijmë menjëherë.
-              </p>
-            </section>
-
-            {/* Section 9 */}
-            <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-3">9. Ndryshimet në Politikë</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-3">8. Ndryshimet në Politikë</h2>
               <p>
                 Ne mund të përditësojmë këtë politikë privatësie. Do t'ju njoftojmë me email për ndryshime të rëndësishme. 
                 Data e përditësimit tregohet në krye të kësaj faqeje.
               </p>
             </section>
 
-            {/* Section 10 */}
+            {/* Section 9 */}
             <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-3">10. Transferimi Ndërkombëtar</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-3">9. Transferimi Ndërkombëtar</h2>
               <p>
                 Të dhënat tuaja mund të përpunohen në serverë jashtë Kosovës (p.sh., në BE ose SHBA). 
                 Ne sigurojmë që këto transferime të jenë në përputhje me standardet e sigurisë.
@@ -149,7 +137,7 @@ const PrivacyPolicy = () => {
               <ul className="space-y-1">
                 <li>Email: privacy@reservo.com</li>
                 <li>Telefon: +383 45 853 844</li>
-                <li>Adresa: Prishtinë, Kosovë</li>
+                <li>Adresa: Gjilan, Kosovë</li>
               </ul>
               <p className="mt-4 text-sm text-gray-600">
                 Do të përgjigjemi në kërkesën tuaj brenda 48 orëve.
