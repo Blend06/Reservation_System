@@ -17,9 +17,15 @@ import TermsOfService from '../components/TermsOfService';
 import PrivacyPolicy from '../components/PrivacyPolicy';
 import { useAuth } from '../auth/authStore';
 
-// Detect if we're on a subdomain
+// Detect if we're on a subdomain (but not Vercel preview URLs)
 const isSubdomain = () => {
   const host = window.location.hostname;
+  
+  // Ignore Vercel URLs (they contain random strings like "pink", "blue", etc.)
+  if (host.includes('vercel.app')) {
+    return false;
+  }
+  
   const parts = host.split('.');
   return parts.length >= 3 && parts[0] !== 'www' && parts[0] !== 'localhost';
 };
