@@ -3,7 +3,7 @@
 # Run database migrations
 python manage.py migrate --noinput
 
-# Create superuser if it doesn't exist (using environment variables)
+# Create superuser if it doesn't exist (using env variables)
 python manage.py create_superadmin \
   --email "${SUPERUSER_EMAIL}" \
   --password "${SUPERUSER_PASSWORD}" \
