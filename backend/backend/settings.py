@@ -184,7 +184,6 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  
     "http://127.0.0.1:3000",
-    "https://railway.app",  # Allow Railway dashboard
 ]
 
 # Add production frontend URLs if provided
@@ -196,7 +195,6 @@ if os.environ.get('FRONTEND_URL'):
 if not DEBUG:
     CORS_ALLOWED_ORIGIN_REGEXES = [
         r"^https://.*\.vercel\.app$",
-        r"^https://.*\.railway\.app$",  # Allow Railway domains
     ]
 
 CORS_ALLOW_CREDENTIALS = True
