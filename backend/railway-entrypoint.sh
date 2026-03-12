@@ -7,24 +7,9 @@ echo "=== Starting deployment ==="
 echo "Running migrations..."
 python manage.py migrate --noinput
 
-# Create superuser if environment variables are set
-if [ -n "$SUPERUSER_EMAIL" ] && [ -n "$SUPERUSER_PASSWORD" ]; then
-    echo "Creating superuser..."
-    python manage.py shell << EOF
-from api.models import User
-if not User.objects.filter(email='$SUPERUSER_EMAIL').exists():
-    User.objects.create_superuser(
-        email='$SUPERUSER_EMAIL',
-        password='$SUPERUSER_PASSWORD',
-        first_name='$SUPERUSER_FIRSTNAME',
-        last_name='$SUPERUSER_LASTNAME',
-        user_type='super_admin'
-    )
-    print('Superuser created successfully!')
-else:
-    print('Superuser already exists.')
-EOF
-fi
+# Create superuser from environment variables
+echo "Attempting to create superuser..."
+python manage.py create_superadmin || echo "Superuser creation skipped or failed"
 
 # Collect static files
 echo "Collecting static files..."
