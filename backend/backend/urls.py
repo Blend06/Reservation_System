@@ -31,6 +31,9 @@ urlpatterns = [
     path("api/health/", health_check, name="health_check"),
 ]
 
+# Serve static files (for Django admin in production)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
 # Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
