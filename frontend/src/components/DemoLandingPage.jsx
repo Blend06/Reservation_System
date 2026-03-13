@@ -91,7 +91,7 @@ const DemoLandingPage = () => {
 
         {/* Navigation */}
         <nav className="relative z-10 flex justify-between items-center px-8 py-6">
-          <img src="/logo+text.png" alt="Reservo" className="h-10 w-auto" />
+          <img src="/logo+text.png" alt="Reservo" className="h-16 w-auto" />
           <button
             onClick={() => navigate('/login')}
             className="px-6 py-2 bg-white text-black rounded-full font-medium hover:bg-gray-200 transition-colors"
