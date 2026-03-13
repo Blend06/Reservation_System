@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from '../components/Login';
-import Register from '../components/Register';
 import Reservations from '../components/Reservations';
 import Homepage from '../components/Homepage';
 import UsersManagement from '../components/admin/UsersManagement';
@@ -93,7 +92,6 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
       {/* Public booking – /book and /book/ redirect to /book/testsalon */}
       <Route path="/book" element={<Navigate to="/book/testsalon" replace />} />
       <Route path="/book/" element={<Navigate to="/book/testsalon" replace />} />
