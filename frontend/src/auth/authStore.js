@@ -50,7 +50,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('Attempting login to:', api.defaults.baseURL + 'auth/login/');
       const response = await api.post('auth/login/', { email, password });
+      console.log('Login response:', response);
       const newToken = response.data.access;
       
       // Set token first
@@ -66,7 +68,32 @@ export const AuthProvider = ({ children }) => {
       // Return user data for immediate use
       return userResponse.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      console.error('Login error details:', error);
+      console.error('Error response:', error.response);
+      console.error('Error request:', error.request);
+      
+      // Handle different error types
+      if (error.response) {
+        // Server responded with error
+        const errorData = error.response.data;
+        if (typeof errorData === 'object' && errorData.error) {
+          throw errorData.error;
+        } else if (typeof errorData === 'string') {
+          // Check if it's HTML error
+          if (errorData.includes('<!doctype') || errorData.includes('<html')) {
+            throw 'Server error: Login endpoint not found. Please contact support.';
+          }
+          throw errorData;
+        } else {
+          throw 'Invalid credentials. Please try again.';
+        }
+      } else if (error.request) {
+        // Request made but no response
+        throw 'Cannot connect to server. Please check your connection.';
+      } else {
+        // Something else happened
+        throw 'Login failed. Please try again.';
+      }
     }
   };
 
