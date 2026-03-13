@@ -42,7 +42,12 @@ class TenantMiddleware(MiddlewareMixin):
         """
         # Remove port if present
         host = host.split(':')[0]
-        
+
+        # Ignore hosting platform domains — not tenant subdomains
+        ignored_suffixes = ('railway.app', 'vercel.app', 'herokuapp.com', 'onrender.com')
+        if any(host.endswith(suffix) for suffix in ignored_suffixes):
+            return None
+
         # Split by dots
         parts = host.split('.')
         
