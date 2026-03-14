@@ -36,23 +36,22 @@ def send_whatsapp_twilio(to_phone, message_type, reservation, business):
         
         # WhatsApp requires 'whatsapp:' prefix
         to_whatsapp = f'whatsapp:{to_phone}'
-        from_whatsapp = f'whatsapp:{settings.TWILIO_WHATSAPP_NUMBER}'
+        from_whatsapp = settings.TWILIO_WHATSAPP_NUMBER  # already has whatsapp: prefix
         
         # Message content
         if message_type == 'confirmed':
             message_body = (
-                f"✅ Your reservation at {business.name} is CONFIRMED!\n\n"
-                f"📅 Date: {reservation.reservation_date}\n"
-                f"🕐 Time: {reservation.reservation_time}\n"
-                f"📍 Location: {business.address if hasattr(business, 'address') else 'See business details'}\n\n"
-                f"See you soon! 😊"
+                f"✅ Rezervimi juaj në {business.name} është KONFIRMUAR!\n\n"
+                f"📅 Data: {reservation.reservation_date}\n"
+                f"🕐 Ora: {reservation.reservation_time}\n\n"
+                f"Ju presim! 😊"
             )
         elif message_type == 'rejected':
             message_body = (
-                f"❌ Sorry, your reservation at {business.name} could not be confirmed.\n\n"
-                f"📅 Date: {reservation.reservation_date}\n"
-                f"🕐 Time: {reservation.reservation_time}\n\n"
-                f"Please contact us to reschedule."
+                f"❌ Na vjen keq, rezervimi juaj në {business.name} nuk është konfirmuar.\n\n"
+                f"📅 Data: {reservation.reservation_date}\n"
+                f"� Ora: {reservation.reservation_time}\n\n"
+                f"Termini i kërkuar është i zënë. Ju lutemi caktoni një termin tjetër."
             )
         else:
             logger.error(f'❌ Invalid message type: {message_type}')
@@ -98,18 +97,17 @@ def send_whatsapp_ultramsg(to_phone, message_type, reservation, business):
         # Message content
         if message_type == 'confirmed':
             message = (
-                f"✅ Your reservation at {business.name} is CONFIRMED!\n\n"
-                f"📅 Date: {reservation.reservation_date}\n"
-                f"🕐 Time: {reservation.reservation_time}\n"
-                f"📍 Location: {business.address if hasattr(business, 'address') else 'See business details'}\n\n"
-                f"See you soon! 😊"
+                f"✅ Rezervimi juaj në {business.name} është KONFIRMUAR!\n\n"
+                f"📅 Data: {reservation.reservation_date}\n"
+                f"🕐 Ora: {reservation.reservation_time}\n\n"
+                f"Ju presim! 😊"
             )
         elif message_type == 'rejected':
             message = (
-                f"❌ Sorry, your reservation at {business.name} could not be confirmed.\n\n"
-                f"📅 Date: {reservation.reservation_date}\n"
-                f"🕐 Time: {reservation.reservation_time}\n\n"
-                f"Please contact us to reschedule."
+                f"❌ Na vjen keq, rezervimi juaj në {business.name} nuk është konfirmuar.\n\n"
+                f"📅 Data: {reservation.reservation_date}\n"
+                f"� Ora: {reservation.reservation_time}\n\n"
+                f"Termini i kërkuar është i zënë. Ju lutemi na kontaktoni për të caktuar një termin tjetër."
             )
         else:
             logger.error(f'❌ Invalid message type: {message_type}')
