@@ -44,7 +44,7 @@ export const useReservations = () => {
 
   const updateReservationStatus = async (reservationId, newStatus) => {
     try {
-      await api.patch(`reservations/${reservationId}/`, { status: newStatus });
+      await api.post(`reservations/${reservationId}/update_status/`, { status: newStatus });
       await fetchReservations(); // Refresh list
       return true;
     } catch (error) {
