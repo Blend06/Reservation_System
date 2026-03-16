@@ -503,7 +503,15 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
       onSuccess();
     } catch (error) {
       console.error('Error creating business:', error);
-      alert('Error creating business. Please check all fields.');
+      const errData = error.response?.data;
+      if (errData && typeof errData === 'object') {
+        const messages = Object.entries(errData)
+          .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join('\n');
+        alert(`Error creating business:\n${messages}`);
+      } else {
+        alert('Error creating business. Please check all fields.');
+      }
     }
     setLoading(false);
   };
