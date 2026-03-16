@@ -39,7 +39,7 @@ class Business(models.Model):
     timezone = models.CharField(max_length=50, default='Europe/Berlin')
     
     # Email Configuration
-    email_from_name = models.CharField(max_length=100, help_text="Name shown in emails")
+    email_from_name = models.CharField(max_length=100, blank=True, help_text="Name shown in emails")
     email_from_address = models.EmailField(blank=True, help_text="Custom from email (optional)")
     
     # Branding

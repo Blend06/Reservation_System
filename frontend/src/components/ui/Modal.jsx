@@ -9,9 +9,9 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className={`bg-white rounded-lg p-6 w-full ${sizeClasses[size]} mx-4`}>
-        <div className="flex justify-between items-center mb-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className={`bg-white rounded-lg w-full ${sizeClasses[size]} mx-4 flex flex-col max-h-[90vh]`}>
+        <div className="flex justify-between items-center p-6 pb-4 flex-shrink-0">
           <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
           <button
             onClick={onClose}
@@ -20,7 +20,9 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
             ×
           </button>
         </div>
-        {children}
+        <div className="overflow-y-auto px-6 pb-6">
+          {children}
+        </div>
       </div>
     </div>
   );
