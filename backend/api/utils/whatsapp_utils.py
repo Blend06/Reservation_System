@@ -36,7 +36,8 @@ def send_whatsapp_twilio(to_phone, message_type, reservation, business):
         
         # WhatsApp requires 'whatsapp:' prefix
         to_whatsapp = f'whatsapp:{to_phone}'
-        from_whatsapp = settings.TWILIO_WHATSAPP_NUMBER  # already has whatsapp: prefix
+        from_number = settings.TWILIO_WHATSAPP_NUMBER
+        from_whatsapp = from_number if from_number.startswith('whatsapp:') else f'whatsapp:{from_number}'
         
         # Message content
         if message_type == 'confirmed':
