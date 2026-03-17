@@ -90,7 +90,8 @@ class ReservationViewSet(viewsets.ModelViewSet):
         else:
             # Main domain, no subdomain - require authentication and business
             if not self.request.user.is_authenticated:
-                raise PermissionError("Authentication required")
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError("No business context found. Please use a valid booking link.")
             if self.request.user.is_business_owner and self.request.user.business:
                 reservation = serializer.save(business=self.request.user.business)
                 
