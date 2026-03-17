@@ -10,11 +10,22 @@ from api.serializers import BusinessSerializer, BusinessCreateSerializer, Busine
 class BusinessViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing businesses (Super Admin only)
+    Public: GET /businesses/?subdomain=xxx is allowed without auth (for public booking page)
     """
     permission_classes = [permissions.IsAuthenticated]
-    
+
+    def get_permissions(self):
+        # Allow unauthenticated access to list when querying by subdomain
+        if self.action == 'list' and self.request.query_params.get('subdomain'):
+            return [permissions.AllowAny()]
+        return super().get_permissions()
+
     def get_queryset(self):
-        # Only super admins can access business management
+        subdomain = self.request.query_params.get('subdomain')
+        # Public subdomain lookup — no auth required
+        if subdomain and not self.request.user.is_authenticated:
+            return Business.objects.filter(subdomain=subdomain, is_active=True)
+        # Only super admins can access full business management
         if not self.request.user.is_super_admin:
             return Business.objects.none()
         return Business.objects.all().order_by('-created_at')
