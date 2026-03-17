@@ -10,9 +10,9 @@ const BusinessDashboard = () => {
   const { user, logout } = useAuth();
   const { reservations, loading, filterStatus, setFilterStatus, refreshReservations } = useReservations();
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh reservations every 5 minutes
   useEffect(() => {
-    const interval = setInterval(refreshReservations, 30000);
+    const interval = setInterval(refreshReservations, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [refreshReservations]);
   const [stats, setStats] = useState({
