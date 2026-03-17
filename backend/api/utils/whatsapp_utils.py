@@ -42,15 +42,15 @@ def send_whatsapp_twilio(to_phone, message_type, reservation, business):
         if message_type == 'confirmed':
             message_body = (
                 f"✅ Rezervimi juaj në {business.name} është KONFIRMUAR!\n\n"
-                f"📅 Data: {reservation.reservation_date}\n"
-                f"🕐 Ora: {reservation.reservation_time}\n\n"
+                f"📅 Data: {reservation.start_time.strftime('%d/%m/%Y')}\n"
+                f"🕐 Ora: {reservation.start_time.strftime('%H:%M')}\n\n"
                 f"Ju presim! 😊"
             )
         elif message_type == 'rejected':
             message_body = (
                 f"❌ Na vjen keq, rezervimi juaj në {business.name} nuk është konfirmuar.\n\n"
-                f"📅 Data: {reservation.reservation_date}\n"
-                f"� Ora: {reservation.reservation_time}\n\n"
+                f"📅 Data: {reservation.start_time.strftime('%d/%m/%Y')}\n"
+                f"🕐 Ora: {reservation.start_time.strftime('%H:%M')}\n\n"
                 f"Termini i kërkuar është i zënë. Ju lutemi caktoni një termin tjetër."
             )
         else:
@@ -98,15 +98,15 @@ def send_whatsapp_ultramsg(to_phone, message_type, reservation, business):
         if message_type == 'confirmed':
             message = (
                 f"✅ Rezervimi juaj në {business.name} është KONFIRMUAR!\n\n"
-                f"📅 Data: {reservation.reservation_date}\n"
-                f"🕐 Ora: {reservation.reservation_time}\n\n"
+                f"📅 Data: {reservation.start_time.strftime('%d/%m/%Y')}\n"
+                f"🕐 Ora: {reservation.start_time.strftime('%H:%M')}\n\n"
                 f"Ju presim! 😊"
             )
         elif message_type == 'rejected':
             message = (
                 f"❌ Na vjen keq, rezervimi juaj në {business.name} nuk është konfirmuar.\n\n"
-                f"📅 Data: {reservation.reservation_date}\n"
-                f"� Ora: {reservation.reservation_time}\n\n"
+                f"📅 Data: {reservation.start_time.strftime('%d/%m/%Y')}\n"
+                f"🕐 Ora: {reservation.start_time.strftime('%H:%M')}\n\n"
                 f"Termini i kërkuar është i zënë. Ju lutemi na kontaktoni për të caktuar një termin tjetër."
             )
         else:
