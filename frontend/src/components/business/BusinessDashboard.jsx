@@ -8,7 +8,7 @@ import ReservationList from '../reservations/ReservationList';
 const BusinessDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { reservations, loading, filterStatus, setFilterStatus } = useReservations();
+  const { reservations, loading, filterStatus, setFilterStatus, refreshReservations } = useReservations();
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -183,7 +183,7 @@ const BusinessDashboard = () => {
               )}
             </div>
           </div>
-          <ReservationList reservations={reservations} showBusinessInfo={false} />
+          <ReservationList reservations={reservations} showBusinessInfo={false} onStatusChange={refreshReservations} />
         </div>
       </div>
     </div>
