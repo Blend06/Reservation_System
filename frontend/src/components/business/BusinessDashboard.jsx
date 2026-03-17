@@ -9,6 +9,12 @@ const BusinessDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { reservations, loading, filterStatus, setFilterStatus, refreshReservations } = useReservations();
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(refreshReservations, 30000);
+    return () => clearInterval(interval);
+  }, [refreshReservations]);
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -173,14 +179,22 @@ const BusinessDashboard = () => {
                   </span>
                 )}
               </h2>
-              {filterStatus !== 'all' && (
+              <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setFilterStatus('all')}
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  onClick={refreshReservations}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium border border-blue-200 px-3 py-1 rounded-md hover:bg-blue-50"
                 >
-                  Show All
+                  ↻ Refresh
                 </button>
-              )}
+                {filterStatus !== 'all' && (
+                  <button
+                    onClick={() => setFilterStatus('all')}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    Show All
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <ReservationList reservations={reservations} showBusinessInfo={false} onStatusChange={refreshReservations} />
