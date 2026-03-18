@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from api.serializers import UserSerializer
+from api.serializers import UserSerializer, RegisterSerializer
 
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -35,7 +35,7 @@ class LoginView(APIView):
             )
 
 class RegisterView(generics.CreateAPIView):
-    serializer_class = UserSerializer
+    serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
 class MeView(APIView):
