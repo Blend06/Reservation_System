@@ -9,6 +9,7 @@ class BusinessSerializer(serializers.ModelSerializer):
         model = Business
         fields = [
             'id', 'name', 'subdomain', 'email', 'phone',
+            'business_type',
             'business_hours_start', 'business_hours_end', 'timezone',
             'email_from_name', 'email_from_address',
             'primary_color', 'logo', 'logo_url',
@@ -56,6 +57,7 @@ class BusinessCreateSerializer(BusinessSerializer):
     class Meta(BusinessSerializer.Meta):
         fields = [
             'name', 'subdomain', 'email', 'phone',
+            'business_type',
             'business_hours_start', 'business_hours_end', 'timezone',
             'email_from_name', 'email_from_address',
             'primary_color', 'logo', 'logo_url',
@@ -98,6 +100,7 @@ class BusinessListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'subdomain', 'full_domain',
             'email', 'phone',
+            'business_type',
             'business_hours_start', 'business_hours_end', 'timezone',
             'email_from_name', 'email_from_address', 'admin_email',
             'primary_color', 'logo_url',

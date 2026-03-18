@@ -51,7 +51,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
         if user.is_authenticated:
             if user.is_super_admin:
                 # Super admin sees all reservations
-                return Reservation.all_objects.all().order_by('-created_at')
+                return Reservation.objects.all().order_by('-created_at')
             elif user.is_business_owner and user.business:
                 # Business owner sees only their business reservations
                 return Reservation.objects.filter(business=user.business).order_by('-created_at')

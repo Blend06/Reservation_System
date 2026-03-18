@@ -2,21 +2,30 @@ from django.db import models
 from django.core.validators import RegexValidator
 import uuid
 
+BUSINESS_TYPE_CHOICES = [
+    ('barbershop', 'Barbershop'),
+    ('salon', 'Salon'),
+    ('spa', 'Spa'),
+    ('restaurant', 'Restaurant'),
+    ('fitness', 'Fitness'),
+    ('clinic', 'Clinic'),
+    ('other', 'Other'),
+]
+
 class Business(models.Model):
     """
     Business model for multi-tenant SaaS
     Each business gets their own subdomain and isolated data
     """
     
-    # Business Type Keywords for categorization
-    TYPE_KEYWORDS = {
-        'Salon': ['salon', 'hair', 'beauty'],
-        'Barbershop': ['barber', 'barbershop'],
-        'Spa': ['spa', 'massage', 'wellness'],
-    }
-    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100, help_text="Business name")
+    business_type = models.CharField(
+        max_length=20,
+        choices=BUSINESS_TYPE_CHOICES,
+        default='other',
+        help_text="Type of business"
+    )
     subdomain = models.CharField(
         max_length=50, 
         unique=True,
@@ -88,16 +97,3 @@ class Business(models.Model):
         if self.logo:
             return self.logo.url
         return self.logo_url or None
-    
-    def get_business_type(self):
-        """
-        Determine business type based on name and subdomain keywords
-        Returns the matched type or 'Others' if no match found
-        """
-        search_text = f"{self.name} {self.subdomain}".lower()
-        
-        for business_type, keywords in self.TYPE_KEYWORDS.items():
-            if any(keyword in search_text for keyword in keywords):
-                return business_type
-        
-        return 'Others'

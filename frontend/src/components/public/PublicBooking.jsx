@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../api/axios';
-import { LoadingSpinner } from '../ui';
 import DateTimeInput from '../forms/DateTimeInput';
 import { createReservationData, getSubdomainFromHost } from '../../utils/reservationUtils';
 
@@ -15,13 +14,15 @@ const PublicBooking = () => {
   const [lookupEmail, setLookupEmail] = useState('');
   const [lookupResults, setLookupResults] = useState(null);
   const [business, setBusiness] = useState(null);
+  const [staffList, setStaffList] = useState([]);
 
   const [formData, setFormData] = useState({
     customer_name: '',
     customer_phone: '',
     date: '',
     time: '',
-    notes: ''
+    notes: '',
+    staff: ''
   });
 
   // Fetch business info on mount
@@ -34,6 +35,9 @@ const PublicBooking = () => {
           if (response.data && response.data.length > 0) {
             setBusiness(response.data[0]);
           }
+          // Fetch staff for this subdomain
+          const staffRes = await api.get(`staff/?subdomain=${subdomain}`);
+          setStaffList(staffRes.data || []);
         }
       } catch (error) {
         console.error('Error fetching business:', error);
@@ -59,6 +63,7 @@ const PublicBooking = () => {
         customer_phone: formData.customer_phone,
         notes: formData.notes,
         ...(subdomain && { subdomain }),
+        ...(formData.staff && { staff: formData.staff }),
       };
 
       await api.post('reservations/', fullReservationData);
@@ -69,7 +74,8 @@ const PublicBooking = () => {
         customer_phone: '',
         date: '',
         time: '',
-        notes: ''
+        notes: '',
+        staff: ''
       });
     } catch (error) {
       console.error('Error creating reservation:', error);
@@ -308,6 +314,42 @@ const PublicBooking = () => {
                   onTimeChange={(time) => setFormData(prev => ({ ...prev, time }))}
                 />
               </div>
+
+              {/* Staff Selection */}
+              {staffList.length > 0 && (
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Zgjidhni Berberrin</h2>
+                  <select
+                    name="staff"
+                    value={formData.staff}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition duration-200"
+                  >
+                    <option value="">— Pa preferencë —</option>
+                    {staffList
+                      .filter(s => {
+                        if (!formData.date) return true;
+                        const dayOfWeek = new Date(formData.date).getDay();
+                        // JS: 0=Sun,1=Mon... convert to our 0=Mon,6=Sun
+                        const adjusted = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                        return !s.rest_days.includes(adjusted);
+                      })
+                      .map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))
+                    }
+                  </select>
+                  {formData.date && staffList.some(s => {
+                    const dayOfWeek = new Date(formData.date).getDay();
+                    const adjusted = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                    return s.rest_days.includes(adjusted);
+                  }) && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Disa berberë nuk punojnë në këtë ditë dhe janë fshehur.
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Special Requests */}
               <div>

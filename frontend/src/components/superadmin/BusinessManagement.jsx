@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/authStore';
 import api from '../../api/axios';
 import { LoadingSpinner, Modal, Table } from '../ui';
+import StaffManagement from '../business/StaffManagement';
 import { 
   ArrowLeft, 
   Plus, 
@@ -15,7 +16,7 @@ import {
   X
 } from 'lucide-react';
 
-const BusinessManagement = () => {
+const BusinessManagement = ({ embedded = false }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [businesses, setBusinesses] = useState([]);
@@ -101,6 +102,13 @@ const BusinessManagement = () => {
           <div className="font-medium text-gray-900">{b.name}</div>
           <div className="text-xs text-gray-500">{b.subdomain}</div>
         </div>
+      )
+    },
+    {
+      header: 'Type',
+      accessor: 'business_type',
+      render: (b) => (
+        <span className="text-sm capitalize">{b.business_type || '—'}</span>
       )
     },
     {
@@ -269,10 +277,11 @@ const BusinessManagement = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+    <div className={embedded ? '' : 'min-h-screen bg-gray-50'}>
+      {/* Header - only shown when not embedded */}
+      {!embedded && (
       <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="w-full px-8 py-4">
           <div className="flex justify-between items-center">
             <div>
               <button
@@ -295,9 +304,22 @@ const BusinessManagement = () => {
           </div>
         </div>
       </div>
+      )}
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="bg-white rounded-lg shadow">
+      <div className="w-full px-0 py-4">
+        {/* Add Business button when embedded */}
+        {embedded && (
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Business</span>
+            </button>
+          </div>
+        )}
+        <div className="bg-white rounded-lg shadow overflow-x-auto">
           <Table
             title={`Businesses (${businesses.length})`}
             data={businesses}
@@ -455,6 +477,7 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
     subdomain: '',
     email: '',
     phone: '',
+    business_type: 'other',
     business_hours_start: '09:00',
     business_hours_end: '18:00',
     timezone: 'Europe/Berlin',
@@ -595,6 +618,24 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Business Type</label>
+        <select
+          name="business_type"
+          value={formData.business_type}
+          onChange={handleChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="barbershop">Barbershop</option>
+          <option value="salon">Salon</option>
+          <option value="spa">Spa</option>
+          <option value="restaurant">Restaurant</option>
+          <option value="fitness">Fitness</option>
+          <option value="clinic">Clinic</option>
+          <option value="other">Other</option>
+        </select>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -852,6 +893,7 @@ const EditBusinessForm = ({ business, onSuccess, onCancel }) => {
     subdomain: business.subdomain || '',
     email: business.email || '',
     phone: business.phone || '',
+    business_type: business.business_type || 'other',
     business_hours_start: business.business_hours_start || '09:00',
     business_hours_end: business.business_hours_end || '18:00',
     timezone: business.timezone || 'Europe/Berlin',
@@ -1042,6 +1084,28 @@ const EditBusinessForm = ({ business, onSuccess, onCancel }) => {
             </div>
           )}
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Business Type</label>
+        <select
+          name="business_type"
+          value={formData.business_type}
+          onChange={handleChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="barbershop">Barbershop</option>
+          <option value="salon">Salon</option>
+          <option value="spa">Spa</option>
+          <option value="restaurant">Restaurant</option>
+          <option value="fitness">Fitness</option>
+          <option value="clinic">Clinic</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div className="border-t pt-4 mt-2">
+        <StaffManagement businessId={business.id} />
       </div>
 
       <div className="flex justify-end space-x-3 pt-4">

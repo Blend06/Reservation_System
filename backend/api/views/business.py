@@ -186,49 +186,32 @@ class BusinessViewSet(viewsets.ModelViewSet):
                 'revenue': revenue
             })
 
-        # 2. Business types
-        TYPE_KEYWORDS = {
-            'Salon': ['salon'],
-            'Barbershop': ['barber', 'barbershop'],
-            'Spa': ['spa'],
-        }
-
-        type_counts = {key: 0 for key in TYPE_KEYWORDS}
-        others_count = 0
-
-        for business in Business.objects.all():
-            matched = False
-            source = f"{business.name} {business.subdomain}".lower()
-
-            for type_name, keywords in TYPE_KEYWORDS.items():
-                if any(keyword in source for keyword in keywords):
-                    type_counts[type_name] += 1
-                    matched = True
-                    break
-
-            if not matched:
-                others_count += 1
-
+        # 2. Business types - use real field
         COLOR_MAP = {
-            'Salon': '#3B82F6',
-            'Barbershop': '#10B981',
-            'Spa': '#F59E0B',
-            'Restaurant': '#EF4444',
-            'Fitness': '#8B5CF6',
-            'Others': '#6B7280'
+            'barbershop': '#10B981',
+            'salon': '#3B82F6',
+            'spa': '#F59E0B',
+            'restaurant': '#EF4444',
+            'fitness': '#8B5CF6',
+            'clinic': '#EC4899',
+            'other': '#6B7280',
         }
+
+        from django.db.models import Count
+        type_counts = (
+            Business.objects
+            .values('business_type')
+            .annotate(count=Count('id'))
+        )
 
         business_types = [
-            {'name': name, 'value': count, 'color': COLOR_MAP[name]}
-            for name, count in type_counts.items() if count > 0
+            {
+                'name': entry['business_type'].capitalize(),
+                'value': entry['count'],
+                'color': COLOR_MAP.get(entry['business_type'], '#6B7280')
+            }
+            for entry in type_counts if entry['count'] > 0
         ]
-
-        if others_count > 0:
-            business_types.append({
-                'name': 'Others',
-                'value': others_count,
-                'color': COLOR_MAP['Others']
-            })
 
         # 3. Reservation trends
         reservation_trends = []
