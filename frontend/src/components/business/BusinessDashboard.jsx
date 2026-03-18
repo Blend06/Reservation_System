@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/authStore';
 import { useReservations } from '../../hooks/useReservations';
 import { LoadingSpinner } from '../ui';
 import ReservationList from '../reservations/ReservationList';
+import StaffManagement from './StaffManagement';
 
 const BusinessDashboard = () => {
   const navigate = useNavigate();
@@ -198,6 +199,11 @@ const BusinessDashboard = () => {
             </div>
           </div>
           <ReservationList reservations={reservations} showBusinessInfo={false} onStatusChange={refreshReservations} />
+        </div>
+
+        {/* Staff Management */}
+        <div className="mt-8">
+          <StaffManagement />
         </div>
       </div>
     </div>

@@ -33,6 +33,9 @@ const ReservationItem = ({ reservation, onStatusChange }) => {
       <td className="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">
         {reservation.notes || '—'}
       </td>
+      <td className="px-4 py-3 text-sm text-gray-600">
+        {reservation.staff_name || '—'}
+      </td>
       <td className="px-4 py-3">
         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(reservation.status)}`}>
           {reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}

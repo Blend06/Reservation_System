@@ -4,14 +4,13 @@ import { useAuth } from '../../auth/authStore';
 import api from '../../api/axios';
 import { LoadingSpinner, Table, StatusBadge } from '../ui';
 import { 
-  ArrowLeft, 
   Calendar, 
   Clock, 
   CheckCircle, 
   XCircle 
 } from 'lucide-react';
 
-const ReservationsManagement = () => {
+const ReservationsManagement = ({ embedded = false }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [reservations, setReservations] = useState([]);
@@ -33,17 +32,27 @@ const ReservationsManagement = () => {
         api.get('reservations/'),
         api.get('businesses/')
       ]);
-      setReservations(reservationsRes.data);
-      setBusinesses(businessesRes.data);
+      // Handle both paginated { results: [] } and plain array responses
+      const resData = reservationsRes.data;
+      const bizData = businessesRes.data;
+      const resList = Array.isArray(resData) ? resData : (resData.results || []);
+      const bizList = Array.isArray(bizData) ? bizData : (bizData.results || []);
+      setReservations(resList);
+      setBusinesses(bizList);
     } catch (error) {
       console.error('Error fetching data:', error);
+      setReservations([]);
+      setBusinesses([]);
     }
     setLoading(false);
   };
 
   const filteredReservations = selectedBusiness === 'all' 
     ? reservations 
-    : reservations.filter(r => r.business?.id === parseInt(selectedBusiness));
+    : reservations.filter(r => {
+        const bizId = String(selectedBusiness);
+        return String(r.business_id) === bizId || String(r.business) === bizId;
+      });
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -66,8 +75,8 @@ const ReservationsManagement = () => {
       accessor: 'business',
       render: (reservation) => (
         <div>
-          <div className="font-medium text-gray-900">{reservation.business?.name}</div>
-          <div className="text-xs text-gray-500">{reservation.business?.subdomain}</div>
+          <div className="font-medium text-gray-900">{reservation.business_name}</div>
+          <div className="text-xs text-gray-500">{reservation.business_subdomain}</div>
         </div>
       )
     },
@@ -88,17 +97,15 @@ const ReservationsManagement = () => {
     },
     {
       header: 'Date & Time',
-      accessor: 'reservation_date',
+      accessor: 'start_time',
       render: (reservation) => (
         <div className="text-sm">
-          <div>{formatDate(reservation.reservation_date)}</div>
+          <div>{formatDate(reservation.start_time)}</div>
+          {reservation.end_time && (
+            <div className="text-xs text-gray-400">→ {formatDate(reservation.end_time)}</div>
+          )}
         </div>
       )
-    },
-    {
-      header: 'Service',
-      accessor: 'service_type',
-      render: (reservation) => <span className="text-sm">{reservation.service_type || '—'}</span>
     },
     {
       header: 'Status',
@@ -126,107 +133,101 @@ const ReservationsManagement = () => {
   ];
 
   if (loading) {
-    return <LoadingSpinner fullScreen />;
+    return <LoadingSpinner />;
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <button
-                onClick={() => navigate('/superadmin')}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium mb-2 flex items-center"
-              >
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Back to My Dashboard
-              </button>
-              <h1 className="text-2xl font-bold text-gray-900">All Reservations</h1>
-              <p className="text-gray-600">View reservations across all client businesses</p>
+  const content = (
+    <>
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="bg-blue-500 rounded-lg p-3 text-white mr-4">
+              <Calendar className="w-6 h-6" />
             </div>
-            <div className="flex items-center space-x-4">
-              <select
-                value={selectedBusiness}
-                onChange={(e) => setSelectedBusiness(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">All Businesses</option>
-                {businesses.map(business => (
-                  <option key={business.id} value={business.id}>
-                    {business.name}
-                  </option>
-                ))}
-              </select>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total</p>
+              <p className="text-2xl font-bold text-gray-900">{filteredReservations.length}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="bg-yellow-500 rounded-lg p-3 text-white mr-4">
+              <Clock className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Pending</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {filteredReservations.filter(r => r.status === 'pending').length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="bg-green-500 rounded-lg p-3 text-white mr-4">
+              <CheckCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Confirmed</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {filteredReservations.filter(r => r.status === 'confirmed').length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="bg-red-500 rounded-lg p-3 text-white mr-4">
+              <XCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Canceled</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {filteredReservations.filter(r => r.status === 'canceled').length}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="bg-blue-500 rounded-lg p-3 text-white mr-4">
-                <Calendar className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total</p>
-                <p className="text-2xl font-bold text-gray-900">{filteredReservations.length}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="bg-yellow-500 rounded-lg p-3 text-white mr-4">
-                <Clock className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {filteredReservations.filter(r => r.status === 'pending').length}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="bg-green-500 rounded-lg p-3 text-white mr-4">
-                <CheckCircle className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Confirmed</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {filteredReservations.filter(r => r.status === 'confirmed').length}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="bg-red-500 rounded-lg p-3 text-white mr-4">
-                <XCircle className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Canceled</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {filteredReservations.filter(r => r.status === 'canceled').length}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Filter */}
+      <div className="flex justify-end mb-4">
+        <select
+          value={selectedBusiness}
+          onChange={(e) => setSelectedBusiness(e.target.value)}
+          className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+        >
+          <option value="all">All Businesses</option>
+          {businesses.map(business => (
+            <option key={business.id} value={business.id}>
+              {business.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        <div className="bg-white rounded-lg shadow">
-          <Table
-            title={`Reservations (${filteredReservations.length})`}
-            data={filteredReservations}
-            columns={columns}
-            emptyMessage="No reservations found"
-          />
-        </div>
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <Table
+          title={`Reservations (${filteredReservations.length})`}
+          data={filteredReservations}
+          columns={columns}
+          emptyMessage="No reservations found"
+        />
+      </div>
+    </>
+  );
+
+  if (embedded) {
+    return <div>{content}</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">All Reservations</h1>
+        {content}
       </div>
     </div>
   );

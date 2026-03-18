@@ -3,24 +3,24 @@ from api.models import Reservation, Business
 from api.serializers.user import UserSerializer
 
 class ReservationSerializer(serializers.ModelSerializer):
-    # Read-only fields for display
     customer_details = UserSerializer(source='customer', read_only=True)
     business_name = serializers.CharField(source='business.name', read_only=True)
     business_subdomain = serializers.CharField(source='business.subdomain', read_only=True)
-    
-    # Use customer_display_name and customer_display_email properties
+    business_id = serializers.IntegerField(source='business.id', read_only=True)
     customer_name_display = serializers.CharField(source='customer_display_name', read_only=True)
     customer_email_display = serializers.CharField(source='customer_display_email', read_only=True)
-    
+    staff_name = serializers.CharField(source='staff.name', read_only=True, default=None)
+
     class Meta:
         model = Reservation
         fields = [
-            'id', 'business', 'business_name', 'business_subdomain',
+            'id', 'business', 'business_id', 'business_name', 'business_subdomain',
             'customer_name', 'customer_email', 'customer_phone',
             'customer_name_display', 'customer_email_display',
             'start_time', 'end_time', 'status', 'notes',
+            'staff', 'staff_name',
             'created_at', 'updated_at',
-            'customer', 'customer_details'  # Legacy fields
+            'customer', 'customer_details'
         ]
         read_only_fields = ['created_at', 'updated_at', 'business']
     
@@ -47,7 +47,7 @@ class PublicReservationSerializer(serializers.ModelSerializer):
         model = Reservation
         fields = [
             'customer_name', 'customer_phone',
-            'start_time', 'end_time', 'notes'
+            'start_time', 'end_time', 'notes', 'staff'
         ]
     
     def validate_customer_name(self, value):
