@@ -7,6 +7,16 @@ class BusinessMinimalSerializer(serializers.Serializer):
     id = serializers.UUIDField(read_only=True)
     name = serializers.CharField(read_only=True)
     subdomain = serializers.CharField(read_only=True)
+    full_domain = serializers.ReadOnlyField()
+    logo_url = serializers.CharField(read_only=True)
+    logo = serializers.SerializerMethodField()
+
+    def get_logo(self, obj):
+        request = self.context.get('request')
+        if obj.logo:
+            url = obj.logo.url
+            return request.build_absolute_uri(url) if request else url
+        return None
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -35,6 +45,14 @@ class UserSerializer(serializers.ModelSerializer):
     is_super_admin = serializers.BooleanField(read_only=True)
     is_business_owner = serializers.BooleanField(read_only=True)
     business_details = BusinessMinimalSerializer(source='business', read_only=True)
+
+    def get_fields(self):
+        fields = super().get_fields()
+        # Pass request context to nested serializer
+        request = self.context.get('request')
+        if request:
+            fields['business_details'].context['request'] = request
+        return fields
 
     class Meta:
         model = User

@@ -86,6 +86,7 @@ export const useReservations = () => {
 
   return {
     reservations,
+    allReservations,
     loading,
     filterStatus,
     setFilterStatus,
