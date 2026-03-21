@@ -24,7 +24,7 @@ def send_new_reservation_email(reservation):
         business = reservation.business
         recipient_email = business.email
         
-        subject = f'🔔 New Reservation #{reservation.id} - {business.name}'
+        subject = f'Rezervim i Ri #{reservation.id} - {business.name}'
         
         # Render HTML email template
         html_message = render_to_string('new_reservation_admin.html', {

@@ -37,14 +37,10 @@ class BusinessSerializer(serializers.ModelSerializer):
     def validate_logo(self, value):
         """Validate logo file is PNG & JPG and size"""
         if value:
-            # Check file extension
-            if not value.name.lower().endswith('.png', '.jpg'):
-                raise serializers.ValidationError("Only PNG & JPG files are allowed")
-            
-            # Check file size (max 2MB)
+            if not value.name.lower().endswith(('.png', '.jpg', '.jpeg')):
+                raise serializers.ValidationError("Only PNG and JPG files are allowed")
             if value.size > 2 * 1024 * 1024:
                 raise serializers.ValidationError("Logo file size must be less than 2MB")
-        
         return value
 
     def validate(self, data):
@@ -102,6 +98,7 @@ class BusinessListSerializer(serializers.ModelSerializer):
     admin_email = serializers.ReadOnlyField()
     user_count = serializers.SerializerMethodField()
     reservation_count = serializers.SerializerMethodField()
+    owner_email = serializers.SerializerMethodField()
     logo = serializers.SerializerMethodField()
 
     def get_logo(self, obj):
@@ -122,7 +119,7 @@ class BusinessListSerializer(serializers.ModelSerializer):
             'primary_color', 'logo', 'logo_url',
             'is_active', 'subscription_status', 'subscription_expires',
             'created_at', 'updated_at',
-            'user_count', 'reservation_count'
+            'user_count', 'reservation_count', 'owner_email'
         ]
     
     def get_user_count(self, obj):
@@ -130,3 +127,7 @@ class BusinessListSerializer(serializers.ModelSerializer):
     
     def get_reservation_count(self, obj):
         return obj.reservations.count()
+
+    def get_owner_email(self, obj):
+        owner = obj.users.filter(user_type='business_owner').first()
+        return owner.email if owner else None
