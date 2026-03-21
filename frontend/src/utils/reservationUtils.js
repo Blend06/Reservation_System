@@ -40,16 +40,14 @@ export const getStatusColor = (status) => {
   }
 };
 
+const DAYS_SQ = ['e diel', 'e hënë', 'e martë', 'e mërkurë', 'e enjte', 'e premte', 'e shtunë'];
+const MONTHS_SQ = ['janar', 'shkurt', 'mars', 'prill', 'maj', 'qershor', 'korrik', 'gusht', 'shtator', 'tetor', 'nëntor', 'dhjetor'];
+
 export const formatReservationDate = (dateTime) => {
   const dateStr = dateTime.split('T')[0];
   const [year, month, day] = dateStr.split('-');
   const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-  return date.toLocaleDateString('sq-AL', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  return `${DAYS_SQ[date.getDay()]}, ${parseInt(day)} ${MONTHS_SQ[date.getMonth()]} ${year}`;
 };
 
 export const formatReservationTime = (dateTime) => {
