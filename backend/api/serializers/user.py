@@ -46,13 +46,16 @@ class UserSerializer(serializers.ModelSerializer):
     is_business_owner = serializers.BooleanField(read_only=True)
     business_details = BusinessMinimalSerializer(source='business', read_only=True)
 
-    def get_fields(self):
-        fields = super().get_fields()
-        # Pass request context to nested serializer
-        request = self.context.get('request')
-        if request:
-            fields['business_details'].context['request'] = request
-        return fields
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Re-serialize business_details with request context so logo URL is absolute
+        if instance.business:
+            serializer = BusinessMinimalSerializer(
+                instance.business,
+                context=self.context
+            )
+            data['business_details'] = serializer.data
+        return data
 
     class Meta:
         model = User
