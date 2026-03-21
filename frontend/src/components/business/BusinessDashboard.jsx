@@ -79,7 +79,13 @@ const BusinessDashboard = () => {
   const biz = user?.business_details;
   const domain = biz?.full_domain || (biz?.subdomain ? `${biz.subdomain}.yourdomain.com` : null);
   const bookingUrl = domain ? `https://${domain}` : '';
-  const logoSrc = biz?.logo || biz?.logo_url || null;
+
+  // Build absolute logo URL — backend may return a relative path like /media/...
+  const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:8000/api/').replace(/\/api\/?$/, '');
+  const rawLogo = biz?.logo || biz?.logo_url || null;
+  const logoSrc = rawLogo
+    ? (rawLogo.startsWith('http') ? rawLogo : `${API_BASE}${rawLogo}`)
+    : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -97,8 +103,7 @@ const BusinessDashboard = () => {
                 />
               )}
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{biz?.name}</h1>
-                <p className="text-sm font-bold text-gray-900 mt-0.5">Mirë se vini, {user?.first_name}</p>
+                <p className="text-sm font-bold text-gray-900">Mirë se vini, {user?.first_name}</p>
                 <p className="text-sm text-gray-900 mt-0.5">Menaxhoni klientët e {biz?.name}</p>
               </div>
             </div>

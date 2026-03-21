@@ -35,11 +35,11 @@ class BusinessSerializer(serializers.ModelSerializer):
         return value.lower()
     
     def validate_logo(self, value):
-        """Validate logo file is PNG and size"""
+        """Validate logo file is PNG & JPG and size"""
         if value:
             # Check file extension
-            if not value.name.lower().endswith('.png'):
-                raise serializers.ValidationError("Only PNG files are allowed")
+            if not value.name.lower().endswith('.png', '.jpg'):
+                raise serializers.ValidationError("Only PNG & JPG files are allowed")
             
             # Check file size (max 2MB)
             if value.size > 2 * 1024 * 1024:
