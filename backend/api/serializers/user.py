@@ -16,7 +16,7 @@ class BusinessMinimalSerializer(serializers.Serializer):
         if obj.logo:
             url = obj.logo.url
             return request.build_absolute_uri(url) if request else url
-        return None
+        return obj.logo_url or None
 
 
 class RegisterSerializer(serializers.ModelSerializer):

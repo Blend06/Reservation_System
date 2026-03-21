@@ -41,17 +41,21 @@ def send_whatsapp_twilio(to_phone, message_type, reservation, business):
         
         # Message content
         if message_type == 'confirmed':
+            staff_line = f"👤 Stafi: {reservation.staff.name}\n" if reservation.staff else ""
             message_body = (
                 f"✅ Rezervimi juaj në {business.name} është KONFIRMUAR!\n\n"
                 f"📅 Data: {reservation.start_time.strftime('%d/%m/%Y')}\n"
-                f"🕐 Ora: {reservation.start_time.strftime('%H:%M')}\n\n"
+                f"🕐 Ora: {reservation.start_time.strftime('%H:%M')}\n"
+                f"{staff_line}\n"
                 f"Ju presim! 😊"
             )
         elif message_type == 'rejected':
+            staff_line = f"👤 Stafi: {reservation.staff.name}\n" if reservation.staff else ""
             message_body = (
                 f"❌ Na vjen keq, rezervimi juaj në {business.name} nuk është konfirmuar.\n\n"
                 f"📅 Data: {reservation.start_time.strftime('%d/%m/%Y')}\n"
-                f"🕐 Ora: {reservation.start_time.strftime('%H:%M')}\n\n"
+                f"🕐 Ora: {reservation.start_time.strftime('%H:%M')}\n"
+                f"{staff_line}\n"
                 f"Termini i kërkuar është i zënë. Ju lutemi caktoni një termin tjetër."
             )
         else:
@@ -97,17 +101,21 @@ def send_whatsapp_ultramsg(to_phone, message_type, reservation, business):
         
         # Message content
         if message_type == 'confirmed':
+            staff_line = f"👤 Stafi: {reservation.staff.name}\n" if reservation.staff else ""
             message = (
                 f"✅ Rezervimi juaj në {business.name} është KONFIRMUAR!\n\n"
                 f"📅 Data: {reservation.start_time.strftime('%d/%m/%Y')}\n"
-                f"🕐 Ora: {reservation.start_time.strftime('%H:%M')}\n\n"
+                f"🕐 Ora: {reservation.start_time.strftime('%H:%M')}\n"
+                f"{staff_line}\n"
                 f"Ju presim! 😊"
             )
         elif message_type == 'rejected':
+            staff_line = f"👤 Stafi: {reservation.staff.name}\n" if reservation.staff else ""
             message = (
                 f"❌ Na vjen keq, rezervimi juaj në {business.name} nuk është konfirmuar.\n\n"
                 f"📅 Data: {reservation.start_time.strftime('%d/%m/%Y')}\n"
-                f"🕐 Ora: {reservation.start_time.strftime('%H:%M')}\n\n"
+                f"🕐 Ora: {reservation.start_time.strftime('%H:%M')}\n"
+                f"{staff_line}\n"
                 f"Termini i kërkuar është i zënë. Ju lutemi na kontaktoni për të caktuar një termin tjetër."
             )
         else:

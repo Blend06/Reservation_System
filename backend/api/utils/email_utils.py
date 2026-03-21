@@ -22,18 +22,18 @@ def send_new_reservation_email(reservation):
     """
     try:
         business = reservation.business
-        business_owner = business.owner
+        recipient_email = business.email
         
         subject = f'🔔 New Reservation #{reservation.id} - {business.name}'
         
         # Render HTML email template
         html_message = render_to_string('new_reservation_admin.html', {
             'customer_name': reservation.customer_name,
-            'customer_email': reservation.customer_email,
+            'customer_email': getattr(reservation, 'customer_email', ''),
             'customer_phone': reservation.customer_phone,
             'reservation_id': reservation.id,
-            'reservation_date': reservation.reservation_date,
-            'reservation_time': reservation.reservation_time,
+            'reservation_date': reservation.start_time.date() if reservation.start_time else '',
+            'reservation_time': reservation.start_time.strftime('%H:%M') if reservation.start_time else '',
             'business_name': business.name,
         })
         
@@ -42,13 +42,13 @@ def send_new_reservation_email(reservation):
             subject=subject,
             message='',  # Plain text version (empty, we use HTML)
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[business_owner.email],
+            recipient_list=[recipient_email],
             html_message=html_message,
             fail_silently=False,
         )
         
         if result:
-            logger.info(f'✅ Email sent to {business_owner.email} for reservation {reservation.id}')
+            logger.info(f'✅ Email sent to {recipient_email} for reservation {reservation.id}')
             return True
         else:
             logger.error(f'❌ Email failed for reservation {reservation.id}')

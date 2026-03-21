@@ -44,7 +44,7 @@ export const formatReservationDate = (dateTime) => {
   const dateStr = dateTime.split('T')[0];
   const [year, month, day] = dateStr.split('-');
   const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-  return date.toLocaleDateString('en-GB', {
+  return date.toLocaleDateString('sq-AL', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
