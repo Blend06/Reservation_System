@@ -122,6 +122,11 @@ const BusinessManagement = ({ embedded = false }) => {
       render: (b) => <span className="text-sm">{b.email}</span>
     },
     {
+      header: 'Owner Login',
+      accessor: 'owner_email',
+      render: (b) => <span className="text-sm text-blue-700">{b.owner_email || '—'}</span>
+    },
+    {
       header: 'Phone',
       accessor: 'phone',
       render: (b) => <span className="text-sm">{b.phone || '—'}</span>
