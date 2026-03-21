@@ -36,6 +36,9 @@ const ReservationItem = ({ reservation, onStatusChange }) => {
       <td className="px-4 py-3 text-sm text-gray-600">
         {reservation.staff_name || '—'}
       </td>
+      <td className="px-4 py-3 text-sm text-gray-500">
+        {reservation.created_at ? new Date(reservation.created_at).toLocaleDateString('sq-AL', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+      </td>
       <td className="px-4 py-3">
         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(reservation.status)}`}>
           {reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}
@@ -49,14 +52,14 @@ const ReservationItem = ({ reservation, onStatusChange }) => {
               disabled={loading}
               className="px-3 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50"
             >
-              Confirm
+              Konfirmo
             </button>
             <button
               onClick={() => handleStatus('rejected')}
               disabled={loading}
               className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded disabled:opacity-50"
             >
-              Reject
+              Refuzo
             </button>
           </div>
         )}

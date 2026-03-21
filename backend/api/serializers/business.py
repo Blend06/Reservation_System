@@ -47,6 +47,14 @@ class BusinessSerializer(serializers.ModelSerializer):
         
         return value
 
+    def validate(self, data):
+        # If a file is uploaded, clear logo_url — and vice versa — so they don't conflict
+        if data.get('logo'):
+            data['logo_url'] = ''
+        elif data.get('logo_url'):
+            data['logo'] = None
+        return data
+
 class BusinessCreateSerializer(BusinessSerializer):
     """Serializer for creating new businesses with owner account"""
     owner_email = serializers.EmailField(write_only=True, required=True)
@@ -94,6 +102,14 @@ class BusinessListSerializer(serializers.ModelSerializer):
     admin_email = serializers.ReadOnlyField()
     user_count = serializers.SerializerMethodField()
     reservation_count = serializers.SerializerMethodField()
+    logo = serializers.SerializerMethodField()
+
+    def get_logo(self, obj):
+        request = self.context.get('request')
+        if obj.logo:
+            url = obj.logo.url
+            return request.build_absolute_uri(url) if request else url
+        return obj.logo_url or None
     
     class Meta:
         model = Business
@@ -103,7 +119,7 @@ class BusinessListSerializer(serializers.ModelSerializer):
             'business_type',
             'business_hours_start', 'business_hours_end', 'timezone',
             'email_from_name', 'email_from_address', 'admin_email',
-            'primary_color', 'logo_url',
+            'primary_color', 'logo', 'logo_url',
             'is_active', 'subscription_status', 'subscription_expires',
             'created_at', 'updated_at',
             'user_count', 'reservation_count'
