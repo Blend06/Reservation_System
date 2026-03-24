@@ -20,8 +20,8 @@ import { useAuth } from '../auth/authStore';
 const isSubdomain = () => {
   const host = window.location.hostname;
   
-  // Ignore Vercel URLs (they contain random strings like "pink", "blue", etc.)
-  if (host.includes('vercel.app')) {
+  // Ignore Vercel and Cloudflare Pages preview URLs
+  if (host.includes('vercel.app') || host.includes('pages.dev')) {
     return false;
   }
   
