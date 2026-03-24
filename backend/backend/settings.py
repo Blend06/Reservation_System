@@ -33,8 +33,8 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '0.0.0.0',
-    '.railway.app',  # Railway domains
-    '.vercel.app',   # Vercel preview domains
+    '.railway.app',       # Railway domains
+    '.pages.dev',         # Cloudflare Pages preview domains
 ]
 
 # Add custom domain if provided
@@ -191,10 +191,10 @@ if os.environ.get('FRONTEND_URL'):
     CORS_ALLOWED_ORIGINS.append(os.environ.get('FRONTEND_URL'))
     CORS_ALLOWED_ORIGINS.append(os.environ.get('FRONTEND_URL').replace('https://', 'https://www.'))
 
-# Allow Vercel preview deployments
+# Allow Cloudflare Pages preview deployments
 if not DEBUG:
     CORS_ALLOWED_ORIGIN_REGEXES = [
-        r"^https://.*\.vercel\.app$",
+        r"^https://.*\.pages\.dev$",
     ]
 
 CORS_ALLOW_CREDENTIALS = True

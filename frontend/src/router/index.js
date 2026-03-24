@@ -16,12 +16,12 @@ import TermsOfService from '../components/TermsOfService';
 import PrivacyPolicy from '../components/PrivacyPolicy';
 import { useAuth } from '../auth/authStore';
 
-// Detect if we're on a subdomain (but not Vercel preview URLs)
+// Detect if we're on a subdomain (but not Cloudflare Pages preview URLs)
 const isSubdomain = () => {
   const host = window.location.hostname;
   
-  // Ignore Vercel and Cloudflare Pages preview URLs
-  if (host.includes('vercel.app') || host.includes('pages.dev')) {
+  // Ignore Cloudflare Pages preview URLs
+  if (host.includes('pages.dev')) {
     return false;
   }
   

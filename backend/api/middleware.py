@@ -44,7 +44,7 @@ class TenantMiddleware(MiddlewareMixin):
         host = host.split(':')[0]
 
         # Ignore hosting platform domains — not tenant subdomains
-        ignored_suffixes = ('railway.app', 'vercel.app', 'herokuapp.com', 'onrender.com')
+        ignored_suffixes = ('railway.app', 'herokuapp.com', 'onrender.com', 'pages.dev')
         if any(host.endswith(suffix) for suffix in ignored_suffixes):
             return None
 
