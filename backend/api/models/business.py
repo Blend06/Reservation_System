@@ -6,7 +6,6 @@ BUSINESS_TYPE_CHOICES = [
     ('barbershop', 'Barbershop'),
     ('salon', 'Salon'),
     ('spa', 'Spa'),
-    ('restaurant', 'Restaurant'),
     ('fitness', 'Fitness'),
     ('clinic', 'Clinic'),
     ('other', 'Other'),

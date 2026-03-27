@@ -636,7 +636,6 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
           <option value="barbershop">Barbershop</option>
           <option value="salon">Salon</option>
           <option value="spa">Spa</option>
-          <option value="restaurant">Restaurant</option>
           <option value="fitness">Fitness</option>
           <option value="clinic">Clinic</option>
           <option value="other">Other</option>
@@ -1102,7 +1101,6 @@ const EditBusinessForm = ({ business, onSuccess, onCancel }) => {
           <option value="barbershop">Barbershop</option>
           <option value="salon">Salon</option>
           <option value="spa">Spa</option>
-          <option value="restaurant">Restaurant</option>
           <option value="fitness">Fitness</option>
           <option value="clinic">Clinic</option>
           <option value="other">Other</option>
