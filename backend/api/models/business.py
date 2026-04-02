@@ -5,8 +5,6 @@ import uuid
 BUSINESS_TYPE_CHOICES = [
     ('barbershop', 'Barbershop'),
     ('salon', 'Salon'),
-    ('spa', 'Spa'),
-    ('fitness', 'Fitness'),
     ('clinic', 'Clinic'),
     ('other', 'Other'),
 ]
