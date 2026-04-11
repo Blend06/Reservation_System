@@ -1,4 +1,147 @@
-# Email & WhatsApp Notification System
+# Email & SMS Notification System
+
+## Overview
+
+This document explains how the notification system works for the reservation platform. The system uses:
+- **Email** for business owner notifications
+- **SMS** for customer notifications
+
+## Architecture
+
+### Notification Flow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  CUSTOMER BOOKS RESERVATION                                  │
+│  (via public booking page)                                   │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│  BACKEND CREATES RESERVATION                                 │
+│  Status: pending                                             │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│  EMAIL SENT TO BUSINESS OWNER                                │
+│  "New reservation from [Customer Name]"                      │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│  BUSINESS OWNER REVIEWS                                      │
+│  (Clicks Accept or Reject)                                   │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│  STATUS UPDATED                                              │
+│  pending → confirmed/rejected                                │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│  SMS SENT TO CUSTOMER                                        │
+│  "Your reservation is confirmed!"                            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Email System (Gmail SMTP)
+
+### Configuration
+
+```env
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password
+ADMIN_EMAIL=your-email@gmail.com
+```
+
+### When Emails Are Sent
+
+- New reservation created → Email to business owner
+- Includes customer details, date, time, service
+
+## SMS System (Twilio)
+
+### Configuration
+
+```env
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=your_auth_token
+TWILIO_PHONE_NUMBER=+1234567890
+```
+
+### When SMS Are Sent
+
+- Reservation confirmed → SMS to customer
+- Reservation rejected → SMS to customer
+- Reservation canceled → SMS to customer
+
+### SMS Templates
+
+**Confirmation:**
+```
+Reservation Confirmed at [Business Name]!
+
+Date: January 15, 2026
+Time: 02:00 PM
+Service: Haircut
+
+We'll see you soon!
+```
+
+**Cancellation:**
+```
+Reservation Cancelled
+
+Your reservation at [Business Name] on January 15, 2026 at 02:00 PM has been cancelled.
+
+Contact us if you have questions.
+```
+
+## Setup Instructions
+
+See `SUPER_ADMIN_SETUP_GUIDE.md` for complete setup instructions for both email and SMS.
+
+## Cost Analysis
+
+### Email (Gmail)
+- **Cost:** FREE
+- **Limit:** 500 emails/day
+- **Best for:** Business owner notifications
+
+### SMS (Twilio)
+- **Cost:** ~$0.0075/message (US)
+- **Limit:** Pay-as-you-go
+- **Best for:** Customer notifications
+
+## Testing
+
+### Test Email
+```bash
+docker exec -it backend python manage.py test_email
+```
+
+### Test SMS
+```python
+from api.utils.sms_utils import send_sms
+send_sms("+1234567890", "Test message!")
+```
+
+## Troubleshooting
+
+### Email Issues
+- Check Gmail app password
+- Verify 2FA is enabled
+- Check spam folder
+
+### SMS Issues  
+- Verify Twilio credentials
+- Check phone number format (+1234567890)
+- Verify account has credits
+- Check Twilio console for errors
+
 
 ## 🎯 Overview
 

@@ -40,10 +40,26 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      if (token) {
-        await loadUserFromToken(token);
-        scheduleRefresh(token);
+      const storedToken = localStorage.getItem('token');
+      const appVersion = localStorage.getItem('appVersion');
+      const currentVersion = '1.0.1'; // Increment this to force logout on all clients
+      
+      // Force logout if version mismatch (clears stale tokens)
+      if (appVersion !== currentVersion) {
+        console.log('App version changed, clearing old session');
+        localStorage.clear();
+        localStorage.setItem('appVersion', currentVersion);
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Initializing auth, token exists:', !!storedToken);
+      
+      if (storedToken) {
+        await loadUserFromToken(storedToken);
+        scheduleRefresh(storedToken);
       } else {
+        console.log('No token found, skipping auth check');
         setLoading(false);
       }
     };
@@ -56,25 +72,32 @@ export const AuthProvider = ({ children }) => {
       const currentToken = tokenToUse || token;
       if (!currentToken) { setLoading(false); return; }
       const response = await api.get('auth/me/', {
-        headers: { Authorization: `Bearer ${currentToken}` }
+        headers: { Authorization: `Bearer ${currentToken}` },
+        timeout: 30000 // 30 second timeout for auth check (handles cold starts)
       });
       setUser(response.data);
     } catch (error) {
+      console.error('Auth check failed:', error.message);
       // Try silent refresh before giving up
       const refreshToken = localStorage.getItem('refreshToken');
       if (refreshToken) {
         try {
-          const res = await api.post('auth/refresh/', { refresh: refreshToken });
+          const res = await api.post('auth/refresh/', { refresh: refreshToken }, { timeout: 30000 });
           const newAccess = res.data.access;
           localStorage.setItem('token', newAccess);
           setToken(newAccess);
           const userRes = await api.get('auth/me/', {
-            headers: { Authorization: `Bearer ${newAccess}` }
+            headers: { Authorization: `Bearer ${newAccess}` },
+            timeout: 30000
           });
           setUser(userRes.data);
           scheduleRefresh(newAccess);
           return;
-        } catch {}
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError.message);
+          // If refresh fails, clear everything and let user login fresh
+          console.log('Clearing invalid tokens');
+        }
       }
       logout();
     } finally {

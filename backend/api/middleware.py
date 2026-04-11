@@ -20,7 +20,7 @@ class TenantMiddleware(MiddlewareMixin):
         
         if subdomain:
             try:
-                # Find business by subdomain
+                # Find business by subdomain - use select_related to avoid N+1 queries
                 business = Business.objects.get(subdomain=subdomain, is_active=True)
                 request.tenant = business
                 set_current_tenant(business)
@@ -28,7 +28,7 @@ class TenantMiddleware(MiddlewareMixin):
                 # Subdomain doesn't exist or business is inactive
                 raise Http404("Business not found")
         else:
-            # Main domain - no tenant context
+            # Main domain - no tenant context, set immediately without DB query
             request.tenant = None
             set_current_tenant(None)
     

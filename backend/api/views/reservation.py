@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from api.models import Reservation, Business
 from api.serializers import ReservationSerializer
 from api.middleware import get_current_tenant
-from api.utils.whatsapp_utils import send_whatsapp_message
+from api.utils.sms_utils import send_reservation_confirmation_sms, send_reservation_cancelled_sms, send_admin_notification_sms
 from api.utils.email_utils import send_new_reservation_email
 import logging
 
@@ -81,12 +81,14 @@ class ReservationViewSet(viewsets.ModelViewSet):
             # Subdomain context or subdomain from frontend - no auth required
             reservation = serializer.save(business=tenant, status='pending')
             
-            # Send email notification to business owner
+            # Send email notification to business owner ONLY (not to customer yet)
             try:
                 send_new_reservation_email(reservation)
                 logger.info(f'✅ Email sent to business owner for reservation {reservation.id}')
             except Exception as e:
                 logger.error(f'❌ Failed to send email for reservation {reservation.id}: {str(e)}')
+            
+            # DO NOT send SMS to customer on creation - only when BO confirms/rejects
         else:
             # Main domain, no subdomain - require authentication and business
             if not self.request.user.is_authenticated:
@@ -219,28 +221,27 @@ class ReservationViewSet(viewsets.ModelViewSet):
         
         logger.info(f'📝 Reservation {reservation.id} status updated: {old_status} → {new_status}')
         
-        # Send WhatsApp notification for confirmed/rejected status
-        whatsapp_sent = False
-        whatsapp_error = None
+        # Send SMS notification for confirmed/rejected/canceled status
+        sms_sent = False
+        sms_error = None
         
-        if new_status in ['confirmed', 'rejected']:
+        if new_status in ['confirmed', 'rejected', 'canceled']:
             try:
-                whatsapp_sent = send_whatsapp_message(
-                    to_phone=reservation.customer_phone,
-                    message_type=new_status,
-                    reservation=reservation,
-                    business=reservation.business
-                )
+                # Send correct message based on status
+                if new_status == 'confirmed':
+                    sms_sent = send_reservation_confirmation_sms(reservation)
+                elif new_status in ['rejected', 'canceled']:
+                    sms_sent = send_reservation_cancelled_sms(reservation)
                 
-                if whatsapp_sent:
-                    logger.info(f'✅ WhatsApp sent to {reservation.customer_phone} for reservation {reservation.id}')
+                if sms_sent:
+                    logger.info(f'✅ SMS sent to {reservation.customer_phone} for reservation {reservation.id} (status: {new_status})')
                 else:
-                    logger.warning(f'⚠️ WhatsApp not sent (no provider configured) for reservation {reservation.id}')
-                    whatsapp_error = 'WhatsApp provider not configured'
+                    logger.warning(f'⚠️ SMS not sent (Twilio not configured) for reservation {reservation.id}')
+                    sms_error = 'Twilio SMS not configured'
                     
             except Exception as e:
-                logger.error(f'❌ WhatsApp failed for reservation {reservation.id}: {str(e)}')
-                whatsapp_error = str(e)
+                logger.error(f'❌ SMS failed for reservation {reservation.id}: {str(e)}')
+                sms_error = str(e)
         
         # Prepare response with detailed feedback
         serializer = self.get_serializer(reservation)
@@ -249,10 +250,10 @@ class ReservationViewSet(viewsets.ModelViewSet):
             'status_updated': True,
             'old_status': old_status,
             'new_status': new_status,
-            'whatsapp_notification': {
-                'sent': whatsapp_sent,
-                'required': new_status in ['confirmed', 'rejected'],
-                'error': whatsapp_error,
+            'sms_notification': {
+                'sent': sms_sent,
+                'required': new_status in ['confirmed', 'rejected', 'canceled'],
+                'error': sms_error,
                 'customer_phone': reservation.customer_phone
             }
         }
