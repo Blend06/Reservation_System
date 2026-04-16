@@ -184,6 +184,72 @@ class ReservationViewSet(viewsets.ModelViewSet):
             'business_name': tenant.name
         })
     
+    @action(detail=False, methods=['get'], permission_classes=[])
+    def booked_slots(self, request):
+        """
+        Get booked time slots for a specific date.
+        Returns list of time slots that are already confirmed.
+        Query params: date (YYYY-MM-DD), subdomain (optional)
+        """
+        from datetime import datetime, timedelta
+        
+        date_str = request.query_params.get('date')
+        subdomain = request.query_params.get('subdomain')
+        
+        if not date_str:
+            return Response(
+                {'error': 'Date parameter is required (YYYY-MM-DD)'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get tenant from subdomain or current context
+        tenant = get_current_tenant()
+        if not tenant and subdomain:
+            tenant = get_tenant_from_request(request)
+        
+        if not tenant:
+            return Response(
+                {'error': 'Business context required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Parse date
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            
+            # Get start and end of day
+            start_of_day = datetime.combine(target_date, datetime.min.time())
+            end_of_day = datetime.combine(target_date, datetime.max.time())
+            
+            # Get confirmed reservations for this date
+            reservations = Reservation.objects.filter(
+                business=tenant,
+                start_time__gte=start_of_day,
+                start_time__lte=end_of_day,
+                status='confirmed'  # Only confirmed bookings block slots
+            ).values('start_time', 'end_time')
+            
+            # Format booked slots as time strings
+            booked_slots = []
+            for reservation in reservations:
+                start_time = reservation['start_time'].strftime('%H:%M')
+                end_time = reservation['end_time'].strftime('%H:%M')
+                booked_slots.append({
+                    'start': start_time,
+                    'end': end_time
+                })
+            
+            return Response({
+                'date': date_str,
+                'booked_slots': booked_slots
+            })
+            
+        except ValueError:
+            return Response(
+                {'error': 'Invalid date format. Use YYYY-MM-DD'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
     @action(detail=True, methods=['post'])
     def update_status(self, request, pk=None):
         """

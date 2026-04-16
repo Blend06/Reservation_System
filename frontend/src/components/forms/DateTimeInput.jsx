@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const DateTimeInput = ({ date, time, onDateChange, onTimeChange }) => {
+const DateTimeInput = ({ date, time, onDateChange, onTimeChange, bookedSlots = [] }) => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const calendarRef = useRef(null);
@@ -89,6 +89,16 @@ const DateTimeInput = ({ date, time, onDateChange, onTimeChange }) => {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const days = getDaysInMonth(currentMonth);
+
+  // Check if a time slot is booked
+  const isTimeBooked = (timeValue) => {
+    if (!timeValue || bookedSlots.length === 0) return false;
+    
+    // Check if the selected time falls within any booked slot
+    return bookedSlots.some(slot => {
+      return timeValue >= slot.start && timeValue < slot.end;
+    });
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -204,10 +214,30 @@ const DateTimeInput = ({ date, time, onDateChange, onTimeChange }) => {
         <input
           type="time"
           value={time}
-          onChange={(e) => onTimeChange(e.target.value)}
+          onChange={(e) => {
+            const selectedTime = e.target.value;
+            if (!isTimeBooked(selectedTime)) {
+              onTimeChange(selectedTime);
+            }
+          }}
           required
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition duration-200"
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition duration-200 ${
+            isTimeBooked(time) 
+              ? 'border-red-300 bg-red-50 text-red-400 cursor-not-allowed' 
+              : 'border-gray-300'
+          }`}
+          disabled={isTimeBooked(time)}
         />
+        {isTimeBooked(time) && (
+          <p className="mt-1 text-xs text-red-500">
+            ⚠️ This time slot is already booked. Please select another time.
+          </p>
+        )}
+        {bookedSlots.length > 0 && !isTimeBooked(time) && (
+          <p className="mt-1 text-xs text-gray-500">
+            {bookedSlots.length} time slot(s) already booked for this date
+          </p>
+        )}
       </div>
     </div>
   );
