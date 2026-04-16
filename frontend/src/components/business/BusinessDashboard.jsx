@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/authStore';
 import { useReservations } from '../../hooks/useReservations';
@@ -77,7 +77,7 @@ const BusinessDashboard = () => {
   if (loading) return <LoadingSpinner fullScreen />;
 
   const biz = user?.business_details;
-  const domain = biz?.full_domain || (biz?.subdomain ? `${biz.subdomain}.yourdomain.com` : null);
+  const domain = biz?.full_domain || (biz?.subdomain ? `${biz.subdomain}.reservo-tani.com` : null);
   const bookingUrl = domain ? `https://${domain}` : '';
 
   // Build absolute logo URL — backend may return a relative path like /media/...
@@ -197,7 +197,16 @@ const OverviewTab = ({ stats, bookingUrl, reservations, byMonth, byHour, maxMont
 );
 
 /* ── Booking Link Card ── */
-const BookingLinkCard = ({ bookingUrl }) => (
+const BookingLinkCard = ({ bookingUrl }) => {
+  const [copied, setCopied] = React.useState(false);
+  
+  const handleCopy = () => {
+    navigator.clipboard.writeText(bookingUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  
+  return (
   <div className="bg-white rounded-lg shadow p-6">
     <div className="flex justify-between items-start">
       <div className="flex-1">
@@ -208,10 +217,10 @@ const BookingLinkCard = ({ bookingUrl }) => (
         </div>
       </div>
       <div className="flex gap-2 ml-6">
-        <button onClick={() => navigator.clipboard.writeText(bookingUrl)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+        <button onClick={handleCopy}
+          className={`${copied ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-700'} text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors`}>
           <Copy className="w-4 h-4" />
-          Kopjo
+          {copied ? 'Kopjuar!' : 'Kopjo'}
         </button>
         <button onClick={() => window.open(bookingUrl, '_blank')}
           className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
@@ -222,6 +231,7 @@ const BookingLinkCard = ({ bookingUrl }) => (
     </div>
   </div>
 );
+};
 
 /* ── Reservations Tab ── */
 const ReservationsTab = ({ reservations, filterStatus, setFilterStatus, refreshReservations }) => (

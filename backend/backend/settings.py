@@ -27,7 +27,8 @@ load_dotenv(BASE_DIR / ".env")
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-0d(s-wky0k@=pg_)jd=5+x4z99=de==u1xouqvzie!dd21jmoo')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+_debug_val = os.environ.get('DEBUG', 'True')
+DEBUG = _debug_val.lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = [
     'localhost',

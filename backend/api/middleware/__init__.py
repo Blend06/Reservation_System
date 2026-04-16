@@ -3,6 +3,9 @@ from django.utils.deprecation import MiddlewareMixin
 from api.models import Business
 import threading
 
+# Import security middleware to make it available
+from .security import SecurityHeadersMiddleware
+
 # Thread-local storage for current tenant
 _thread_locals = threading.local()
 

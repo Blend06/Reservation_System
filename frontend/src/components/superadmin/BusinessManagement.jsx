@@ -597,7 +597,7 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
             placeholder="salon"
             required
           />
-          <p className="text-xs text-gray-500 mt-1">{formData.subdomain}.yourdomain.com</p>
+          <p className="text-xs text-gray-500 mt-1">{formData.subdomain}.reservo-tani.com</p>
         </div>
       </div>
       
@@ -952,7 +952,7 @@ const EditBusinessForm = ({ business, onSuccess, onCancel }) => {
             placeholder="salon"
             required
           />
-          <p className="text-xs text-gray-500 mt-1">{formData.subdomain}.yourdomain.com</p>
+          <p className="text-xs text-gray-500 mt-1">{formData.subdomain}.reservo-tani.com</p>
         </div>
       </div>
       

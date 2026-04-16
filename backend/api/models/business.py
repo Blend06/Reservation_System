@@ -82,7 +82,7 @@ class Business(models.Model):
     @property
     def full_domain(self):
         """Return the full subdomain URL"""
-        return f"{self.subdomain}.yourdomain.com"
+        return f"{self.subdomain}.reservo-tani.com"
     
     @property
     def admin_email(self):
