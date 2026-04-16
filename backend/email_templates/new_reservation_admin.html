@@ -29,8 +29,8 @@
 
         <div class="reservation-details">
             <h3>📅 Detajet e Rezervimit</h3>
-            <p><strong>Klienti:</strong> {{ customer_name }}</p>
-            <p><strong>Telefoni:</strong> {{ customer_phone }}</p>
+            <p><strong>Klienti:</strong> {{ customer_name|escape }}</p>
+            <p><strong>Telefoni:</strong> {{ customer_phone|escape }}</p>
             <p><strong>Nr. Rezervimit:</strong> #{{ reservation_id }}</p>
             <p><strong>Data:</strong> {{ reservation_date }}</p>
             <p><strong>Ora:</strong> {{ reservation_time }}</p>

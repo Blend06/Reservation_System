@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from api.models import Reservation, Business
 from api.serializers.user import UserSerializer
+from api.utils.input_sanitizer import InputSanitizer
 
 class ReservationSerializer(serializers.ModelSerializer):
     customer_details = UserSerializer(source='customer', read_only=True)
@@ -23,6 +24,26 @@ class ReservationSerializer(serializers.ModelSerializer):
             'customer', 'customer_details'
         ]
         read_only_fields = ['created_at', 'updated_at', 'business']
+    
+    def validate_customer_name(self, value):
+        """Validate and sanitize customer name"""
+        return InputSanitizer.sanitize_name(value, max_length=100)
+    
+    def validate_customer_phone(self, value):
+        """Validate and sanitize phone number"""
+        return InputSanitizer.sanitize_phone(value)
+    
+    def validate_customer_email(self, value):
+        """Validate and sanitize email (optional field)"""
+        if value:
+            return InputSanitizer.sanitize_email(value)
+        return value
+    
+    def validate_notes(self, value):
+        """Sanitize notes to prevent XSS"""
+        if value:
+            return InputSanitizer.sanitize_text(value, max_length=1000)
+        return value
     
     def validate(self, data):
         """Validate reservation data"""
@@ -51,16 +72,18 @@ class PublicReservationSerializer(serializers.ModelSerializer):
         ]
     
     def validate_customer_name(self, value):
-        """Validate customer name"""
-        if not value or len(value.strip()) < 2:
-            raise serializers.ValidationError("Valid name is required")
-        return value.strip()
+        """Validate and sanitize customer name"""
+        return InputSanitizer.sanitize_name(value, max_length=100)
     
     def validate_customer_phone(self, value):
-        """Validate phone number"""
-        if not value or len(value.strip()) < 8:
-            raise serializers.ValidationError("Valid phone number is required")
-        return value.strip()
+        """Validate and sanitize phone number"""
+        return InputSanitizer.sanitize_phone(value)
+    
+    def validate_notes(self, value):
+        """Sanitize notes to prevent XSS"""
+        if value:
+            return InputSanitizer.sanitize_text(value, max_length=1000)
+        return value
 
 class ReservationListSerializer(serializers.ModelSerializer):
     """

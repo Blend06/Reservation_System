@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from api.models import Business
+from api.utils.input_sanitizer import InputSanitizer
 
 class BusinessSerializer(serializers.ModelSerializer):
     full_domain = serializers.ReadOnlyField()
@@ -19,10 +20,14 @@ class BusinessSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['created_at', 'updated_at']
     
+    def validate_name(self, value):
+        """Validate and sanitize business name"""
+        return InputSanitizer.sanitize_name(value, max_length=200)
+    
     def validate_subdomain(self, value):
         """Validate subdomain format and uniqueness"""
-        if not value:
-            raise serializers.ValidationError("Subdomain is required")
+        # Sanitize and validate format
+        value = InputSanitizer.sanitize_subdomain(value)
         
         # Check if subdomain is already taken (excluding current instance)
         queryset = Business.objects.filter(subdomain=value)
@@ -32,7 +37,23 @@ class BusinessSerializer(serializers.ModelSerializer):
         if queryset.exists():
             raise serializers.ValidationError("This subdomain is already taken")
         
-        return value.lower()
+        return value
+    
+    def validate_email(self, value):
+        """Validate business email"""
+        return InputSanitizer.sanitize_email(value)
+    
+    def validate_phone(self, value):
+        """Validate business phone"""
+        if value:
+            return InputSanitizer.sanitize_phone(value)
+        return value
+    
+    def validate_email_from_name(self, value):
+        """Sanitize email from name"""
+        if value:
+            return InputSanitizer.sanitize_text(value, max_length=100)
+        return value
     
     def validate_logo(self, value):
         """Validate logo file is PNG & JPG and size"""

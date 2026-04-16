@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from api.models import User
+from api.utils.input_sanitizer import InputSanitizer
 
 
 class BusinessMinimalSerializer(serializers.Serializer):
@@ -27,6 +28,24 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "email", "first_name", "last_name", "phone", "password"]
         read_only_fields = ["id"]
+    
+    def validate_email(self, value):
+        """Validate and sanitize email"""
+        return InputSanitizer.sanitize_email(value)
+    
+    def validate_first_name(self, value):
+        """Validate and sanitize first name"""
+        return InputSanitizer.sanitize_name(value, max_length=50)
+    
+    def validate_last_name(self, value):
+        """Validate and sanitize last name"""
+        return InputSanitizer.sanitize_name(value, max_length=50)
+    
+    def validate_phone(self, value):
+        """Validate and sanitize phone"""
+        if value:
+            return InputSanitizer.sanitize_phone(value)
+        return value
 
     def create(self, validated_data):
         password = validated_data.pop("password")
