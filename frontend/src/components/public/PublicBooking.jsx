@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../api/axios';
 import DateTimeInput from '../forms/DateTimeInput';
@@ -15,6 +15,8 @@ const PublicBooking = () => {
   const [lookupResults, setLookupResults] = useState(null);
   const [business, setBusiness] = useState(null);
   const [staffList, setStaffList] = useState([]);
+  const [bookedSlots, setBookedSlots] = useState([]);
+  const [businessHours, setBusinessHours] = useState({ start: '08:00', end: '22:00' });
   const [formData, setFormData] = useState({
     customer_name: '', customer_phone: '', date: '', time: '', notes: '', staff: ''
   });
@@ -24,15 +26,60 @@ const PublicBooking = () => {
       try {
         const subdomain = subdomainFromUrl || getSubdomainFromHost();
         if (subdomain) {
-          const res = await api.get(`businesses/?subdomain=${subdomain}`);
-          if (res.data && res.data.length > 0) setBusiness(res.data[0]);
-          const staffRes = await api.get(`staff/?subdomain=${subdomain}`);
+          const res = await api.get('businesses/?subdomain=' + subdomain);
+          if (res.data && res.data.length > 0) {
+            setBusiness(res.data[0]);
+            if (res.data[0].business_hours_start && res.data[0].business_hours_end) {
+              setBusinessHours({
+                start: res.data[0].business_hours_start.substring(0, 5),
+                end: res.data[0].business_hours_end.substring(0, 5)
+              });
+            }
+          }
+          const staffRes = await api.get('staff/?subdomain=' + subdomain);
           setStaffList(staffRes.data || []);
         }
       } catch (err) { console.error('Error fetching business:', err); }
     };
     fetchBusiness();
   }, [subdomainFromUrl]);
+
+  useEffect(() => {
+    const fetchBookedSlots = async () => {
+      console.log('FETCH BOOKED SLOTS - date:', formData.date);
+      
+      if (!formData.date) {
+        setBookedSlots([]);
+        return;
+      }
+      
+      try {
+        const parts = formData.date.split('/');
+        const day = parts[0];
+        const month = parts[1];
+        const year = parts[2];
+        
+        if (!day || !month || !year || day.length !== 2 || month.length !== 2 || year.length !== 4) {
+          return;
+        }
+        
+        const isoDate = year + '-' + month + '-' + day;
+        const subdomain = subdomainFromUrl || getSubdomainFromHost();
+        
+        if (!subdomain) return;
+        
+        console.log('API CALL:', 'reservations/booked_slots/?date=' + isoDate + '&subdomain=' + subdomain);
+        const res = await api.get('reservations/booked_slots/?date=' + isoDate + '&subdomain=' + subdomain);
+        console.log('API RESPONSE:', res.data);
+        setBookedSlots(res.data.booked_slots || []);
+      } catch (err) {
+        console.error('ERROR fetching booked slots:', err);
+        setBookedSlots([]);
+      }
+    };
+    
+    fetchBookedSlots();
+  }, [formData.date, subdomainFromUrl]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,7 +91,7 @@ const PublicBooking = () => {
       await api.post('reservations/', {
         ...reservationData,
         customer_name: formData.customer_name,
-        customer_phone: `+383${formData.customer_phone}`,
+        customer_phone: '+383' + formData.customer_phone,
         notes: formData.notes,
         ...(subdomain && { subdomain }),
         ...(formData.staff && { staff: formData.staff }),
@@ -130,7 +177,7 @@ const PublicBooking = () => {
                               <p className="text-gray-300">{new Date(r.start_time).toLocaleDateString()} at {new Date(r.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                               {r.notes && <p className="text-gray-400 mt-1">Notes: {r.notes}</p>}
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${r.status === 'confirmed' ? 'bg-green-500/20 text-green-400' : r.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : r.status === 'canceled' ? 'bg-red-500/20 text-red-400' : 'bg-gray-500/20 text-gray-400'}`}>{r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span>
+                            <span className={'px-3 py-1 rounded-full text-sm font-medium ' + (r.status === 'confirmed' ? 'bg-green-500/20 text-green-400' : r.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : r.status === 'canceled' ? 'bg-red-500/20 text-red-400' : 'bg-gray-500/20 text-gray-400')}>{r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span>
                           </div>
                         </div>
                       ))}
@@ -150,7 +197,7 @@ const PublicBooking = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-4">{business?.name ? `Book at ${business.name}` : 'Book Your Appointment'}</h1>
+            <h1 className="text-4xl font-bold text-white mb-4">{business?.name ? 'Book at ' + business.name : 'Book Your Appointment'}</h1>
             <p className="text-xl text-gray-400">Schedule your appointment with us. We will contact you to confirm your booking.</p>
           </div>
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
@@ -174,7 +221,14 @@ const PublicBooking = () => {
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-white mb-4">Appointment Details</h2>
-                <DateTimeInput date={formData.date} time={formData.time} onDateChange={(date) => setFormData(prev => ({ ...prev, date }))} onTimeChange={(time) => setFormData(prev => ({ ...prev, time }))} />
+                <DateTimeInput 
+                  date={formData.date} 
+                  time={formData.time} 
+                  onDateChange={(date) => setFormData(prev => ({ ...prev, date }))} 
+                  onTimeChange={(time) => setFormData(prev => ({ ...prev, time }))}
+                  bookedSlots={bookedSlots}
+                  businessHours={businessHours}
+                />
               </div>
               {staffList.length > 0 && (
                 <div>

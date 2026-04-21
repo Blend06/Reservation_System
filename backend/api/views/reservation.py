@@ -19,7 +19,8 @@ def get_tenant_from_request(request):
     """
     subdomain = (
         request.META.get('HTTP_X_SUBDOMAIN') or
-        request.data.get('subdomain')
+        request.data.get('subdomain') or
+        request.query_params.get('subdomain')
     )
     if not subdomain:
         return None
@@ -192,6 +193,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
         Query params: date (YYYY-MM-DD), subdomain (optional)
         """
         from datetime import datetime, timedelta
+        import pytz
         
         date_str = request.query_params.get('date')
         subdomain = request.query_params.get('subdomain')
@@ -217,9 +219,12 @@ class ReservationViewSet(viewsets.ModelViewSet):
             # Parse date
             target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
             
-            # Get start and end of day
-            start_of_day = datetime.combine(target_date, datetime.min.time())
-            end_of_day = datetime.combine(target_date, datetime.max.time())
+            # Use Europe/Berlin timezone (same as settings.TIME_ZONE)
+            local_tz = pytz.timezone('Europe/Berlin')
+            
+            # Get start and end of day in local timezone
+            start_of_day = local_tz.localize(datetime.combine(target_date, datetime.min.time()))
+            end_of_day = local_tz.localize(datetime.combine(target_date, datetime.max.time()))
             
             # Get confirmed reservations for this date
             reservations = Reservation.objects.filter(
@@ -229,14 +234,16 @@ class ReservationViewSet(viewsets.ModelViewSet):
                 status='confirmed'  # Only confirmed bookings block slots
             ).values('start_time', 'end_time')
             
-            # Format booked slots as time strings
+            # Format booked slots as time strings in local timezone
             booked_slots = []
             for reservation in reservations:
-                start_time = reservation['start_time'].strftime('%H:%M')
-                end_time = reservation['end_time'].strftime('%H:%M')
+                # Convert UTC times to local timezone
+                start_time_local = reservation['start_time'].astimezone(local_tz)
+                end_time_local = reservation['end_time'].astimezone(local_tz)
+                
                 booked_slots.append({
-                    'start': start_time,
-                    'end': end_time
+                    'start': start_time_local.strftime('%H:%M'),
+                    'end': end_time_local.strftime('%H:%M')
                 })
             
             return Response({

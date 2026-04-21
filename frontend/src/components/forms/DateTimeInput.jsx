@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const DateTimeInput = ({ date, time, onDateChange, onTimeChange, bookedSlots = [] }) => {
+const DateTimeInput = ({ date, time, onDateChange, onTimeChange, bookedSlots = [], businessHours = { start: '08:00', end: '22:00' } }) => {
+  console.log('🎯 DateTimeInput rendered - bookedSlots:', bookedSlots, 'date:', date);
+  
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const calendarRef = useRef(null);
@@ -94,16 +96,48 @@ const DateTimeInput = ({ date, time, onDateChange, onTimeChange, bookedSlots = [
   const isTimeBooked = (timeValue) => {
     if (!timeValue || bookedSlots.length === 0) return false;
     
-    // Check if the selected time falls within any booked slot
-    return bookedSlots.some(slot => {
-      return timeValue >= slot.start && timeValue < slot.end;
+    console.log('🔍 Checking if', timeValue, 'is booked. Booked slots:', bookedSlots);
+    
+    // Check if the selected time matches the start of any booked slot
+    const isBooked = bookedSlots.some(slot => {
+      const matches = timeValue === slot.start;
+      console.log(`  Comparing ${timeValue} === ${slot.start}: ${matches}`);
+      return matches;
     });
+    
+    console.log(`  Result: ${timeValue} is ${isBooked ? 'BOOKED' : 'AVAILABLE'}`);
+    return isBooked;
   };
+
+  // Generate time slots (every 30 minutes from business opening to closing)
+  const generateTimeSlots = () => {
+    const slots = [];
+    const [startHour, startMin] = businessHours.start.split(':').map(Number);
+    const [endHour, endMin] = businessHours.end.split(':').map(Number);
+    
+    let currentHour = startHour;
+    let currentMin = startMin;
+    
+    while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
+      const timeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMin).padStart(2, '0')}`;
+      slots.push(timeStr);
+      
+      currentMin += 30;
+      if (currentMin >= 60) {
+        currentMin = 0;
+        currentHour += 1;
+      }
+    }
+    
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-300 mb-2">
           Date (DD/MM/YYYY)
         </label>
         <div className="relative" ref={inputRef}>
@@ -120,12 +154,12 @@ const DateTimeInput = ({ date, time, onDateChange, onTimeChange, bookedSlots = [
             onFocus={() => setShowCalendar(true)}
             maxLength="10"
             required
-            className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition duration-200"
+            className="w-full px-4 py-3 pr-12 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition duration-200"
           />
           <button
             type="button"
             onClick={() => setShowCalendar(!showCalendar)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-500 transition duration-200 cursor-pointer p-1"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition duration-200 cursor-pointer p-1"
           >
             <Calendar className="w-5 h-5" />
           </button>
@@ -207,36 +241,41 @@ const DateTimeInput = ({ date, time, onDateChange, onTimeChange, bookedSlots = [
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+        <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
           <Clock className="w-4 h-4 mr-1" />
           Time
         </label>
-        <input
-          type="time"
-          value={time}
-          onChange={(e) => {
-            const selectedTime = e.target.value;
-            if (!isTimeBooked(selectedTime)) {
-              onTimeChange(selectedTime);
-            }
-          }}
-          required
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition duration-200 ${
-            isTimeBooked(time) 
-              ? 'border-red-300 bg-red-50 text-red-400 cursor-not-allowed' 
-              : 'border-gray-300'
-          }`}
-          disabled={isTimeBooked(time)}
-        />
-        {isTimeBooked(time) && (
-          <p className="mt-1 text-xs text-red-500">
-            ⚠️ This time slot is already booked. Please select another time.
-          </p>
-        )}
-        {bookedSlots.length > 0 && !isTimeBooked(time) && (
-          <p className="mt-1 text-xs text-gray-500">
-            {bookedSlots.length} time slot(s) already booked for this date
-          </p>
+        {!date ? (
+          <div className="p-6 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 text-center">
+            <p className="text-white text-sm">⚠️ Zgjidhni datën në fillim</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto p-3 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20">
+              {timeSlots.filter(slot => !isTimeBooked(slot)).map((slot) => {
+                const selected = time === slot;
+                return (
+                  <button
+                    key={slot}
+                    type="button"
+                    onClick={() => onTimeChange(slot)}
+                    className={`
+                      px-4 py-3 rounded-lg text-base font-semibold transition-all duration-200 cursor-pointer
+                      flex items-center justify-center
+                      ${selected ? 'bg-blue-600 text-white shadow-lg scale-105' : 'bg-white/10 hover:bg-purple-600 text-white border border-white/20'}
+                    `}
+                  >
+                    {slot}
+                  </button>
+                );
+              })}
+            </div>
+            {bookedSlots.length > 0 && (
+              <p className="mt-2 text-xs text-gray-400">
+                {bookedSlots.length} time slot(s) unavailable (hidden from list)
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>

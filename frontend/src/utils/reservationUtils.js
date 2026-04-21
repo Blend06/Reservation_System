@@ -15,13 +15,12 @@ export const createReservationData = (date, time) => {
   const [day, month, year] = date.split('/');
   const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   
-  // Create timezone-aware datetime strings for Europe/Berlin timezone
-  // This ensures the backend receives the exact time the user intended
-  const startDateTime = `${formattedDate}T${time}:00+01:00`;
+  // Create datetime strings without timezone offset - let backend handle timezone
+  const startDateTime = `${formattedDate}T${time}:00`;
   
   const [hours, minutes] = time.split(':');
   const endHour = (parseInt(hours) + 1).toString().padStart(2, '0');
-  const endDateTime = `${formattedDate}T${endHour}:${minutes}:00+01:00`;
+  const endDateTime = `${formattedDate}T${endHour}:${minutes}:00`;
   
   return {
     start_time: startDateTime,
