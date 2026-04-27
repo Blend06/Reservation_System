@@ -44,6 +44,10 @@ if os.environ.get('CUSTOM_DOMAIN'):
     ALLOWED_HOSTS.append(f"*.{os.environ.get('CUSTOM_DOMAIN')}")
     ALLOWED_HOSTS.append(f"api.{os.environ.get('CUSTOM_DOMAIN')}")
 
+# Logo uploads (multipart); Django defaults (~2.5MB) would reject larger bodies before the serializer runs
+LOGO_MAX_FILE_SIZE = 10 * 1024 * 1024  # keep in sync with BusinessSerializer.validate_logo
+DATA_UPLOAD_MAX_MEMORY_SIZE = 12 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 12 * 1024 * 1024
 
 # Application definition
 

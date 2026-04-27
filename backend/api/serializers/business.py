@@ -1,6 +1,9 @@
+from django.conf import settings
 from rest_framework import serializers
 from api.models import Business
 from api.utils.input_sanitizer import InputSanitizer
+
+_LOGO_MAX_BYTES = getattr(settings, 'LOGO_MAX_FILE_SIZE', 10 * 1024 * 1024)
 
 class BusinessSerializer(serializers.ModelSerializer):
     full_domain = serializers.ReadOnlyField()
@@ -60,8 +63,9 @@ class BusinessSerializer(serializers.ModelSerializer):
         if value:
             if not value.name.lower().endswith(('.png', '.jpg', '.jpeg')):
                 raise serializers.ValidationError("Only PNG and JPG files are allowed")
-            if value.size > 2 * 1024 * 1024:
-                raise serializers.ValidationError("Logo file size must be less than 2MB")
+            if value.size > _LOGO_MAX_BYTES:
+                mb = _LOGO_MAX_BYTES // (1024 * 1024)
+                raise serializers.ValidationError(f"Logo file size must be less than {mb}MB")
         return value
 
     def validate(self, data):

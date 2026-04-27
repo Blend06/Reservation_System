@@ -16,6 +16,10 @@ import {
   X
 } from 'lucide-react';
 
+/** Keep in sync with backend `LOGO_MAX_FILE_SIZE` / `BusinessSerializer.validate_logo` */
+const MAX_LOGO_BYTES = 10 * 1024 * 1024;
+const MAX_LOGO_LABEL = '10MB';
+
 const BusinessManagement = ({ embedded = false }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -339,6 +343,7 @@ const BusinessManagement = ({ embedded = false }) => {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         title="Create New Business"
+        size="screen"
       >
         <CreateBusinessForm
           onSuccess={() => {
@@ -357,6 +362,7 @@ const BusinessManagement = ({ embedded = false }) => {
           setSelectedBusiness(null);
         }}
         title="Edit Business"
+        size="screen"
       >
         {selectedBusiness && (
           <EditBusinessForm
@@ -560,9 +566,8 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
         alert('Please select an image file');
         return;
       }
-      // Validate file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        alert('File size must be less than 2MB');
+      if (file.size > MAX_LOGO_BYTES) {
+        alert(`File size must be less than ${MAX_LOGO_LABEL}`);
         return;
       }
       setFormData(prev => ({
@@ -791,7 +796,7 @@ const CreateBusinessForm = ({ onSuccess, onCancel }) => {
               onChange={handleFileChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <p className="text-xs text-gray-500 mt-1">PNG, JPG or JPEG. Max 2MB.</p>
+            <p className="text-xs text-gray-500 mt-1">PNG, JPG or JPEG. Max {MAX_LOGO_LABEL}.</p>
             {formData.logo && (
               <div className="mt-2">
                 <p className="text-sm text-green-600">✓ File selected: {formData.logo.name}</p>
@@ -902,19 +907,51 @@ const EditBusinessForm = ({ business, onSuccess, onCancel }) => {
     email_from_name: business.email_from_name || '',
     email_from_address: business.email_from_address || '',
     primary_color: business.primary_color || '#3B82F6',
-    logo_url: business.logo_url || ''
+    logo_url: business.logo_url || '',
+    logo: null
   });
   const [loading, setLoading] = useState(false);
+  const [logoOption, setLogoOption] = useState(() =>
+    business.logo_url && String(business.logo_url).trim()
+      ? 'url'
+      : business.logo
+        ? 'file'
+        : 'url'
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
-      await api.put(`businesses/${business.id}/`, formData);
+      if (formData.logo instanceof File) {
+        const submitData = new FormData();
+        Object.keys(formData).forEach((key) => {
+          if (key === 'logo') {
+            if (formData.logo) submitData.append('logo', formData.logo);
+          } else if (formData[key] !== null && formData[key] !== '') {
+            submitData.append(key, formData[key]);
+          }
+        });
+        await api.put(`businesses/${business.id}/`, submitData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } else {
+        const { logo, ...rest } = formData;
+        await api.put(`businesses/${business.id}/`, rest);
+      }
       onSuccess();
     } catch (error) {
       console.error('Error updating business:', error);
+      const errData = error.response?.data;
+      if (errData && typeof errData === 'object') {
+        const messages = Object.entries(errData)
+          .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join('\n');
+        alert(`Error updating business:\n${messages}`);
+      } else {
+        alert('Error updating business. Please check all fields.');
+      }
     }
     setLoading(false);
   };
@@ -925,6 +962,24 @@ const EditBusinessForm = ({ business, onSuccess, onCancel }) => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      if (file.size > MAX_LOGO_BYTES) {
+        alert(`File size must be less than ${MAX_LOGO_LABEL}`);
+        return;
+      }
+      setFormData((prev) => ({
+        ...prev,
+        logo: file
+      }));
+    }
   };
 
   return (
@@ -1040,52 +1095,106 @@ const EditBusinessForm = ({ business, onSuccess, onCancel }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Primary Color</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              name="primary_color"
-              value={formData.primary_color}
-              onChange={handleChange}
-              className="h-10 w-14 rounded border border-gray-300 cursor-pointer"
-            />
-            <input
-              type="text"
-              value={formData.primary_color}
-              onChange={(e) => setFormData((prev) => ({ ...prev, primary_color: e.target.value }))}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="#3B82F6"
-            />
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Logo URL (optional)
-            <span className="text-xs text-gray-500 block">Direct link to business logo image</span>
-          </label>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Primary Color</label>
+        <div className="flex items-center gap-2 max-w-md">
           <input
-            type="url"
-            name="logo_url"
-            value={formData.logo_url}
+            type="color"
+            name="primary_color"
+            value={formData.primary_color}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="https://example.com/logo.png"
+            className="h-10 w-14 rounded border border-gray-300 cursor-pointer"
           />
-          {formData.logo_url && (
-            <div className="mt-2">
-              <img 
-                src={formData.logo_url} 
-                alt="Logo preview" 
-                className="h-12 w-auto border border-gray-200 rounded"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            </div>
-          )}
+          <input
+            type="text"
+            value={formData.primary_color}
+            onChange={(e) => setFormData((prev) => ({ ...prev, primary_color: e.target.value }))}
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="#3B82F6"
+          />
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Business Logo</label>
+        <div className="flex gap-4 mb-3">
+          <button
+            type="button"
+            onClick={() => setLogoOption('url')}
+            className={`px-4 py-2 rounded-md ${
+              logoOption === 'url'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            URL
+          </button>
+          <button
+            type="button"
+            onClick={() => setLogoOption('file')}
+            className={`px-4 py-2 rounded-md ${
+              logoOption === 'file'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Upload PNG
+          </button>
+        </div>
+
+        {logoOption === 'url' ? (
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Direct link to business logo image</p>
+            <input
+              type="url"
+              name="logo_url"
+              value={formData.logo_url}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="https://example.com/logo.png"
+            />
+            {formData.logo_url && (
+              <div className="mt-2">
+                <img
+                  src={formData.logo_url}
+                  alt="Logo preview"
+                  className="h-16 w-auto border border-gray-200 rounded p-2"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/jpg"
+              onChange={handleFileChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">PNG, JPG or JPEG. Max {MAX_LOGO_LABEL}.</p>
+            {formData.logo && (
+              <div className="mt-2">
+                <p className="text-sm text-green-600">✓ File selected: {formData.logo.name}</p>
+              </div>
+            )}
+            {!formData.logo && business.logo && (
+              <div className="mt-2">
+                <p className="text-xs text-gray-600 mb-1">Current logo:</p>
+                <img
+                  src={business.logo}
+                  alt="Current business logo"
+                  className="h-16 w-auto border border-gray-200 rounded p-2 max-h-24 object-contain"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div>
