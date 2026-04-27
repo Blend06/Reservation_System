@@ -9,6 +9,13 @@ const parseMinutes = (hm) => {
   return h * 60 + m;
 };
 
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
 const DateTimeInput = ({
   date,
   time,
@@ -18,7 +25,6 @@ const DateTimeInput = ({
   businessHours = { start: '08:00', end: '22:00' },
   appointmentDurationMinutes = DEFAULT_APPOINTMENT_DURATION_MINUTES,
 }) => {
-  
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const calendarRef = useRef(null);
@@ -98,13 +104,6 @@ const DateTimeInput = ({
            checkDate.getFullYear() === parseInt(year);
   };
 
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
   const days = getDaysInMonth(currentMonth);
 
   /** Hide slot if a pending/confirmed booking overlaps this start + appointment length. */
@@ -150,12 +149,12 @@ const DateTimeInput = ({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">
-          Date (DD/MM/YYYY)
+          Data (DD/MM/VVVV)
         </label>
         <div className="relative" ref={inputRef}>
           <input
             type="text"
-            placeholder="DD/MM/YYYY (e.g., 24/12/2025)"
+            placeholder="DD/MM/VVVV (p.sh. 24/12/2025)"
             value={date}
             onChange={(e) => {
               let value = e.target.value.replace(/\D/g, '');
@@ -193,7 +192,7 @@ const DateTimeInput = ({
                   <ChevronLeft className="w-5 h-5 text-gray-600" />
                 </button>
                 <h3 className="text-lg font-semibold text-gray-800">
-                  {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                  {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                 </h3>
                 <button
                   type="button"
@@ -206,7 +205,7 @@ const DateTimeInput = ({
 
               {/* Day Names */}
               <div className="grid grid-cols-7 gap-1 mb-2">
-                {dayNames.map((day) => (
+                {DAY_NAMES.map((day) => (
                   <div
                     key={day}
                     className="text-center text-xs font-semibold text-gray-500 py-2"
@@ -244,7 +243,7 @@ const DateTimeInput = ({
                   onClick={() => handleDateSelect(new Date())}
                   className="w-full py-2 px-4 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition duration-200 font-medium text-sm"
                 >
-                  Today
+                  Sot
                 </button>
               </div>
             </div>
@@ -255,11 +254,11 @@ const DateTimeInput = ({
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
           <Clock className="w-4 h-4 mr-1" />
-          Time
+          Ora
         </label>
         {!date ? (
           <div className="p-6 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 text-center">
-            <p className="text-white text-sm">⚠️ Zgjidhni datën në fillim</p>
+            <p className="text-white text-sm">⚠️ Zgjidhni fillimisht datën</p>
           </div>
         ) : (
           <>
@@ -283,19 +282,25 @@ const DateTimeInput = ({
               })}
             </div>
             <p className="mt-2 text-xs text-gray-400">
-              {appointmentDurationMinutes}-minute visits must finish by closing ({businessHours.end}). Last start:{' '}
               {(() => {
                 const [eh, em] = businessHours.end.split(':').map(Number);
                 const closeM = eh * 60 + em;
                 const last = closeM - appointmentDurationMinutes;
-                if (last < 0) return '—';
-                return `${String(Math.floor(last / 60)).padStart(2, '0')}:${String(last % 60).padStart(2, '0')}`;
+                const lastStr =
+                  last < 0 ? '—' : `${String(Math.floor(last / 60)).padStart(2, '0')}:${String(last % 60).padStart(2, '0')}`;
+                return (
+                  <>
+                    Vizitat {appointmentDurationMinutes}-minutëshe duhet të përfundojnë deri në mbyllje (
+                    {businessHours.end}). Ora e fundit e fillimit: {lastStr}.
+                  </>
+                );
               })()}
-              .
             </p>
             {bookedSlots.length > 0 && (
               <p className="mt-2 text-xs text-gray-400">
-                {bookedSlots.length} time slot(s) unavailable (hidden from list)
+                {bookedSlots.length === 1
+                  ? '1 interval është i zënë (fshihet nga lista).'
+                  : `${bookedSlots.length} intervale janë të zëna (fshihen nga lista).`}
               </p>
             )}
           </>

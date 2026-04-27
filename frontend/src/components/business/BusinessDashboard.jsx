@@ -7,7 +7,7 @@ import ReservationList from '../reservations/ReservationList';
 import StaffManagement from './StaffManagement';
 import {
   LayoutDashboard, Calendar, Users, BarChart3, LogOut,
-  Copy, ExternalLink
+  Copy, ExternalLink, Trophy
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -73,6 +73,40 @@ const BusinessDashboard = () => {
   })();
 
   const maxMonth = byMonth.reduce((m, x) => x.total > m ? x.total : m, 0);
+
+  // Analytics: top 5 clients of current month
+  const topClientsThisMonth = (() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    // Filter reservations for current month (exclude canceled)
+    const thisMonthReservations = (allReservations || []).filter(r => {
+      const d = new Date(r.start_time);
+      return d.getMonth() === currentMonth && 
+             d.getFullYear() === currentYear &&
+             r.status !== 'canceled';
+    });
+    
+    // Group by customer_phone (unique client identifier)
+    const clientMap = {};
+    thisMonthReservations.forEach(r => {
+      const phone = r.customer_phone || 'unknown';
+      if (!clientMap[phone]) {
+        clientMap[phone] = {
+          name: r.customer_name || r.customer_name_display || 'Pa emër',
+          phone: phone,
+          visits: 0
+        };
+      }
+      clientMap[phone].visits++;
+    });
+    
+    // Sort by visits and take top 5
+    return Object.values(clientMap)
+      .sort((a, b) => b.visits - a.visits)
+      .slice(0, 5);
+  })();
 
   if (loading) return <LoadingSpinner fullScreen />;
 
@@ -144,6 +178,7 @@ const BusinessDashboard = () => {
             byMonth={byMonth}
             byHour={byHour}
             maxMonth={maxMonth}
+            topClientsThisMonth={topClientsThisMonth}
             setActiveTab={setActiveTab}
           />
         )}
@@ -156,14 +191,14 @@ const BusinessDashboard = () => {
           />
         )}
         {activeTab === 'staff' && <StaffManagement />}
-        {activeTab === 'analytics' && <AnalyticsTab byMonth={byMonth} byHour={byHour} maxMonth={maxMonth} />}
+        {activeTab === 'analytics' && <AnalyticsTab byMonth={byMonth} byHour={byHour} maxMonth={maxMonth} topClientsThisMonth={topClientsThisMonth} />}
       </div>
     </div>
   );
 };
 
 /* ── Overview Tab ── */
-const OverviewTab = ({ stats, bookingUrl, reservations, byMonth, byHour, maxMonth, setActiveTab }) => (
+const OverviewTab = ({ stats, bookingUrl, reservations, byMonth, byHour, maxMonth, topClientsThisMonth, setActiveTab }) => (
   <div className="space-y-8">
     {/* Stat cards */}
     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -192,7 +227,7 @@ const OverviewTab = ({ stats, bookingUrl, reservations, byMonth, byHour, maxMont
     <StaffManagement />
 
     {/* Analytics preview */}
-    <AnalyticsTab byMonth={byMonth} byHour={byHour} maxMonth={maxMonth} />
+    <AnalyticsTab byMonth={byMonth} byHour={byHour} maxMonth={maxMonth} topClientsThisMonth={topClientsThisMonth} />
   </div>
 );
 
@@ -258,55 +293,95 @@ const ReservationsTab = ({ reservations, filterStatus, setFilterStatus, refreshR
 );
 
 /* ── Analytics Tab ── */
-const AnalyticsTab = ({ byMonth, byHour, maxMonth }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-    {/* Reservations by month */}
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-bold text-gray-800 mb-1">Rezervimet sipas muajit</h2>
-      <p className="text-sm text-gray-500 mb-4">Cili muaj kishte më shumë klientë</p>
-      {byMonth.length === 0 ? (
-        <p className="text-gray-400 text-center py-12">Nuk ka të dhëna ende</p>
-      ) : (
-        <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={byMonth}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis allowDecimals={false} />
-            <Tooltip formatter={(v) => [`${v} rezervime`, 'Totali']} />
-            <Bar dataKey="total" radius={[4,4,0,0]}>
-              {byMonth.map((entry, i) => (
-                <Cell key={i} fill={entry.total === maxMonth ? '#3B82F6' : '#93C5FD'} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      )}
-    </div>
+const AnalyticsTab = ({ byMonth, byHour, maxMonth, topClientsThisMonth = [] }) => {
+  const currentMonthName = MONTH_NAMES[new Date().getMonth()];
+  
+  return (
+    <div className="space-y-8">
+      {/* Top 5 clients of current month */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center gap-3 mb-1">
+          <Trophy className="w-6 h-6 text-yellow-500" />
+          <h2 className="text-xl font-bold text-gray-800">Top 5 Klientët e Muajit ({currentMonthName})</h2>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">Klientët që kanë ardhur më shumë këtë muaj</p>
+        {topClientsThisMonth.length === 0 ? (
+          <p className="text-gray-400 text-center py-8">Nuk ka rezervime këtë muaj ende</p>
+        ) : (
+          <div className="space-y-3">
+            {topClientsThisMonth.map((client, idx) => (
+              <div key={client.phone} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-4">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                    idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-amber-600' : 'bg-blue-400'
+                  }`}>
+                    {idx + 1}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{client.name}</p>
+                    <p className="text-sm text-gray-500">{client.phone}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-blue-600">{client.visits}</p>
+                  <p className="text-xs text-gray-500">vizita</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-    {/* Reservations by hour */}
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-bold text-gray-800 mb-1">Orët më të ngarkuara</h2>
-      <p className="text-sm text-gray-500 mb-4">Në cilat orë vijnë më shumë klientë</p>
-      {byHour.filter(h => h.total > 0).length === 0 ? (
-        <p className="text-gray-400 text-center py-12">Nuk ka të dhëna ende</p>
-      ) : (
-        <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={byHour}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="hour" tick={{ fontSize: 11 }} />
-            <YAxis allowDecimals={false} />
-            <Tooltip formatter={(v) => [`${v} klientë`, 'Totali']} />
-            <Bar dataKey="total" radius={[4,4,0,0]}>
-              {byHour.map((entry, i) => {
-                const maxH = Math.max(...byHour.map(h => h.total));
-                return <Cell key={i} fill={entry.total === maxH && maxH > 0 ? '#10B981' : '#6EE7B7'} />;
-              })}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Reservations by month */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-1">Rezervimet sipas muajit</h2>
+          <p className="text-sm text-gray-500 mb-4">Cili muaj kishte më shumë klientë</p>
+          {byMonth.length === 0 ? (
+            <p className="text-gray-400 text-center py-12">Nuk ka të dhëna ende</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={byMonth}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis allowDecimals={false} />
+                <Tooltip formatter={(v) => [`${v} rezervime`, 'Totali']} />
+                <Bar dataKey="total" radius={[4,4,0,0]}>
+                  {byMonth.map((entry, i) => (
+                    <Cell key={i} fill={entry.total === maxMonth ? '#3B82F6' : '#93C5FD'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Reservations by hour */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-1">Orët më të ngarkuara</h2>
+          <p className="text-sm text-gray-500 mb-4">Në cilat orë vijnë më shumë klientë</p>
+          {byHour.filter(h => h.total > 0).length === 0 ? (
+            <p className="text-gray-400 text-center py-12">Nuk ka të dhëna ende</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={byHour}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="hour" tick={{ fontSize: 11 }} />
+                <YAxis allowDecimals={false} />
+                <Tooltip formatter={(v) => [`${v} klientë`, 'Totali']} />
+                <Bar dataKey="total" radius={[4,4,0,0]}>
+                  {byHour.map((entry, i) => {
+                    const maxH = Math.max(...byHour.map(h => h.total));
+                    return <Cell key={i} fill={entry.total === maxH && maxH > 0 ? '#10B981' : '#6EE7B7'} />;
+                  })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default BusinessDashboard;

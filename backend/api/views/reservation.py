@@ -6,7 +6,8 @@ from api.serializers import ReservationSerializer
 from api.middleware import get_current_tenant
 from api.utils.tenant_request import get_tenant_from_request
 from api.utils.sms_utils import send_reservation_confirmation_sms, send_reservation_cancelled_sms, send_admin_notification_sms
-from api.utils.email_utils import send_new_reservation_email
+from api.utils.email_utils import send_new_reservation_email_async
+from django.db import transaction
 import logging
 
 logger = logging.getLogger(__name__)
@@ -63,14 +64,10 @@ class ReservationViewSet(viewsets.ModelViewSet):
         if tenant:
             # Subdomain context or subdomain from frontend - no auth required
             reservation = serializer.save(business=tenant, status='pending')
-            
-            # Send email notification to business owner ONLY (not to customer yet)
-            try:
-                send_new_reservation_email(reservation)
-                logger.info(f'✅ Email sent to business owner for reservation {reservation.id}')
-            except Exception as e:
-                logger.error(f'❌ Failed to send email for reservation {reservation.id}: {str(e)}')
-            
+            # Notify owner via SMTP without blocking the response (see email_utils).
+            transaction.on_commit(
+                lambda rid=str(reservation.id): send_new_reservation_email_async(rid)
+            )
             # DO NOT send SMS to customer on creation - only when BO confirms/rejects
         else:
             # Main domain, no subdomain - require authentication and business
@@ -79,13 +76,9 @@ class ReservationViewSet(viewsets.ModelViewSet):
                 raise ValidationError("No business context found. Please use a valid booking link.")
             if self.request.user.is_business_owner and self.request.user.business:
                 reservation = serializer.save(business=self.request.user.business)
-                
-                # Send email notification to business owner
-                try:
-                    send_new_reservation_email(reservation)
-                    logger.info(f'✅ Email sent to business owner for reservation {reservation.id}')
-                except Exception as e:
-                    logger.error(f'❌ Failed to send email for reservation {reservation.id}: {str(e)}')
+                transaction.on_commit(
+                    lambda rid=str(reservation.id): send_new_reservation_email_async(rid)
+                )
             else:
                 raise PermissionError("No business context available")
 

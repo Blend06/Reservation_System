@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Count, Q
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 from api.models import Business, User, Reservation
 from api.serializers import BusinessSerializer, BusinessCreateSerializer, BusinessListSerializer
 
@@ -260,4 +260,58 @@ class BusinessViewSet(viewsets.ModelViewSet):
             'monthlyGrowth': round(monthly_growth, 1),
             'activeBusinesses': Business.objects.filter(is_active=True).count(),
             'totalReservations': Reservation.objects.count()
+        })
+
+    @action(detail=False, methods=['get'])
+    def reservations_by_business(self, request):
+        """
+        Get reservation counts per business with period filter.
+        Query params: period = today | week | month | year (default: month)
+        Also returns top 3 businesses with most reservations.
+        """
+        if not request.user.is_super_admin:
+            return Response(
+                {"error": "Permission denied"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        period = request.query_params.get('period', 'month')
+        now = timezone.now()
+
+        # Calculate date range based on period
+        if period == 'today':
+            start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        elif period == 'week':
+            start_date = now - timedelta(days=now.weekday())
+            start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        elif period == 'year':
+            start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        else:  # month (default)
+            start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # Get all businesses with reservation counts for the period
+        businesses_with_counts = (
+            Business.objects
+            .filter(is_active=True)
+            .annotate(
+                reservation_count=Count(
+                    'reservations',
+                    filter=Q(
+                        reservations__start_time__gte=start_date,
+                        reservations__status__in=['pending', 'confirmed', 'completed']
+                    )
+                )
+            )
+            .values('id', 'name', 'subdomain', 'reservation_count')
+            .order_by('-reservation_count')
+        )
+
+        all_businesses = list(businesses_with_counts)
+        top_3 = all_businesses[:3]
+
+        return Response({
+            'period': period,
+            'start_date': start_date.isoformat(),
+            'top_businesses': top_3,
+            'all_businesses': all_businesses
         })
