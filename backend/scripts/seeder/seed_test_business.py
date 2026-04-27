@@ -15,13 +15,23 @@ if __name__ == '__main__':
 from api.models import Business, Reservation
 from api.models.staff import Staff
 
-# ── 1. Find existing business ────────────────────────────────────────────────
-try:
-    business = Business.objects.get(subdomain='testadmin')
+# ── 1. Find or create business ──────────────────────────────────────────────
+business, created = Business.objects.get_or_create(
+    subdomain='testadmin',
+    defaults={
+        'name': 'Test Admin Barbershop',
+        'business_type': 'barbershop',
+        'email': 'testadmin@example.com',
+        'phone': '+38344000000',
+        'business_hours_start': '09:00',
+        'business_hours_end': '18:00',
+        'is_active': True,
+    }
+)
+if created:
+    print(f"Created business: {business.name} (subdomain={business.subdomain})")
+else:
     print(f"Found business: {business.name} (id={business.id})")
-except Business.DoesNotExist:
-    print("ERROR: Business with subdomain 'testadmin' not found. Create it first.")
-    sys.exit(1)
 
 # ── 2. Staff Members ─────────────────────────────────────────────────────────
 staff_members = []

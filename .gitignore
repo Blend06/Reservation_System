@@ -136,6 +136,9 @@ celerybeat.pid
 backend/media/
 media/
 
+# Database backups (SQL files)
+backend/scripts/db/backup/*.sql
+
 # SageMath parsed files
 *.sage.py
 
