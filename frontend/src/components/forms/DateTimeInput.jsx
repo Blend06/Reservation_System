@@ -1,8 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
 import { Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { DEFAULT_APPOINTMENT_DURATION_MINUTES } from '../../utils/reservationUtils';
 
-const DateTimeInput = ({ date, time, onDateChange, onTimeChange, bookedSlots = [], businessHours = { start: '08:00', end: '22:00' } }) => {
-  console.log('🎯 DateTimeInput rendered - bookedSlots:', bookedSlots, 'date:', date);
+const parseMinutes = (hm) => {
+  if (!hm || typeof hm !== 'string') return null;
+  const [h, m] = hm.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  return h * 60 + m;
+};
+
+const DateTimeInput = ({
+  date,
+  time,
+  onDateChange,
+  onTimeChange,
+  bookedSlots = [],
+  businessHours = { start: '08:00', end: '22:00' },
+  appointmentDurationMinutes = DEFAULT_APPOINTMENT_DURATION_MINUTES,
+}) => {
   
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -92,43 +107,40 @@ const DateTimeInput = ({ date, time, onDateChange, onTimeChange, bookedSlots = [
 
   const days = getDaysInMonth(currentMonth);
 
-  // Check if a time slot is booked
+  /** Hide slot if a pending/confirmed booking overlaps this start + appointment length. */
   const isTimeBooked = (timeValue) => {
     if (!timeValue || bookedSlots.length === 0) return false;
-    
-    console.log('🔍 Checking if', timeValue, 'is booked. Booked slots:', bookedSlots);
-    
-    // Check if the selected time matches the start of any booked slot
-    const isBooked = bookedSlots.some(slot => {
-      const matches = timeValue === slot.start;
-      console.log(`  Comparing ${timeValue} === ${slot.start}: ${matches}`);
-      return matches;
+    const slotStart = parseMinutes(timeValue);
+    if (slotStart === null) return false;
+    const slotEnd = slotStart + appointmentDurationMinutes;
+
+    return bookedSlots.some((slot) => {
+      const resStart = parseMinutes(slot.start);
+      if (resStart === null) return false;
+      const resEnd = slot.end != null && slot.end !== ''
+        ? parseMinutes(slot.end)
+        : resStart + appointmentDurationMinutes;
+      if (resEnd === null) return false;
+      return slotStart < resEnd && slotEnd > resStart;
     });
-    
-    console.log(`  Result: ${timeValue} is ${isBooked ? 'BOOKED' : 'AVAILABLE'}`);
-    return isBooked;
   };
 
-  // Generate time slots (every 30 minutes from business opening to closing)
+  /** 30-minute grid; only starts where visit ends by closing (e.g. 09–18 & 30 min visit → last start 17:30). */
+  const SLOT_INTERVAL_MINUTES = 30;
+
   const generateTimeSlots = () => {
     const slots = [];
     const [startHour, startMin] = businessHours.start.split(':').map(Number);
     const [endHour, endMin] = businessHours.end.split(':').map(Number);
-    
-    let currentHour = startHour;
-    let currentMin = startMin;
-    
-    while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
-      const timeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMin).padStart(2, '0')}`;
-      slots.push(timeStr);
-      
-      currentMin += 30;
-      if (currentMin >= 60) {
-        currentMin = 0;
-        currentHour += 1;
-      }
+    const openM = startHour * 60 + startMin;
+    const closeM = endHour * 60 + endMin;
+
+    for (let t = openM; t + appointmentDurationMinutes <= closeM; t += SLOT_INTERVAL_MINUTES) {
+      const hh = Math.floor(t / 60);
+      const mm = t % 60;
+      slots.push(`${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`);
     }
-    
+
     return slots;
   };
 
@@ -270,6 +282,17 @@ const DateTimeInput = ({ date, time, onDateChange, onTimeChange, bookedSlots = [
                 );
               })}
             </div>
+            <p className="mt-2 text-xs text-gray-400">
+              {appointmentDurationMinutes}-minute visits must finish by closing ({businessHours.end}). Last start:{' '}
+              {(() => {
+                const [eh, em] = businessHours.end.split(':').map(Number);
+                const closeM = eh * 60 + em;
+                const last = closeM - appointmentDurationMinutes;
+                if (last < 0) return '—';
+                return `${String(Math.floor(last / 60)).padStart(2, '0')}:${String(last % 60).padStart(2, '0')}`;
+              })()}
+              .
+            </p>
             {bookedSlots.length > 0 && (
               <p className="mt-2 text-xs text-gray-400">
                 {bookedSlots.length} time slot(s) unavailable (hidden from list)

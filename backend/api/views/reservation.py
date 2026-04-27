@@ -1,33 +1,15 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from api.models import Reservation, Business
+from api.models import Reservation
 from api.serializers import ReservationSerializer
 from api.middleware import get_current_tenant
+from api.utils.tenant_request import get_tenant_from_request
 from api.utils.sms_utils import send_reservation_confirmation_sms, send_reservation_cancelled_sms, send_admin_notification_sms
 from api.utils.email_utils import send_new_reservation_email
 import logging
 
 logger = logging.getLogger(__name__)
-
-
-def get_tenant_from_request(request):
-    """
-    Resolve business (tenant) from subdomain sent by frontend.
-    Used when API is on a different host (e.g. api.domain.com) so Host header
-    doesn't contain the business subdomain.
-    """
-    subdomain = (
-        request.META.get('HTTP_X_SUBDOMAIN') or
-        request.data.get('subdomain') or
-        request.query_params.get('subdomain')
-    )
-    if not subdomain:
-        return None
-    try:
-        return Business.objects.get(subdomain=subdomain.strip().lower(), is_active=True)
-    except (Business.DoesNotExist, Business.MultipleObjectsReturned):
-        return None
 
 
 class ReservationViewSet(viewsets.ModelViewSet):
@@ -188,8 +170,9 @@ class ReservationViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[])
     def booked_slots(self, request):
         """
-        Get booked time slots for a specific date.
-        Returns list of time slots that are already confirmed.
+        Get booked time intervals for a specific date (local business day).
+        Pending and confirmed reservations block the slot picker so the same time
+        cannot be selected twice; confirmed stays blocked after acceptance.
         Query params: date (YYYY-MM-DD), subdomain (optional)
         """
         from datetime import datetime, timedelta
@@ -226,12 +209,11 @@ class ReservationViewSet(viewsets.ModelViewSet):
             start_of_day = local_tz.localize(datetime.combine(target_date, datetime.min.time()))
             end_of_day = local_tz.localize(datetime.combine(target_date, datetime.max.time()))
             
-            # Get confirmed reservations for this date
             reservations = Reservation.objects.filter(
                 business=tenant,
                 start_time__gte=start_of_day,
                 start_time__lte=end_of_day,
-                status='confirmed'  # Only confirmed bookings block slots
+                status__in=['pending', 'confirmed'],
             ).values('start_time', 'end_time')
             
             # Format booked slots as time strings in local timezone

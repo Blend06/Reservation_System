@@ -11,21 +11,34 @@ export const getSubdomainFromHost = () => {
   return null;
 };
 
+/** Booking length in minutes — must match DateTimeInput overlap + public slot grid (30 min). */
+export const DEFAULT_APPOINTMENT_DURATION_MINUTES = 30;
+
+const pad2 = (n) => String(n).padStart(2, '0');
+
 export const createReservationData = (date, time) => {
   const [day, month, year] = date.split('/');
+  const y = parseInt(year, 10);
+  const mo = parseInt(month, 10) - 1;
+  const d = parseInt(day, 10);
+  const [h, mi] = time.split(':').map((x) => parseInt(x, 10));
   const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-  
-  // Create datetime strings without timezone offset - let backend handle timezone
-  const startDateTime = `${formattedDate}T${time}:00`;
-  
-  const [hours, minutes] = time.split(':');
-  const endHour = (parseInt(hours) + 1).toString().padStart(2, '0');
-  const endDateTime = `${formattedDate}T${endHour}:${minutes}:00`;
-  
+  const startDateTime = `${formattedDate}T${pad2(h)}:${pad2(mi)}:00`;
+
+  const startTotalMin = h * 60 + mi;
+  const endTotalMin = startTotalMin + DEFAULT_APPOINTMENT_DURATION_MINUTES;
+  const extraDays = Math.floor(endTotalMin / (24 * 60));
+  const t = endTotalMin % (24 * 60);
+  const eh = Math.floor(t / 60);
+  const em = t % 60;
+  const endCal = new Date(y, mo, d + extraDays);
+  const endDateStr = `${endCal.getFullYear()}-${pad2(endCal.getMonth() + 1)}-${pad2(endCal.getDate())}`;
+  const endDateTime = `${endDateStr}T${pad2(eh)}:${pad2(em)}:00`;
+
   return {
     start_time: startDateTime,
     end_time: endDateTime,
-    status: 'pending'
+    status: 'pending',
   };
 };
 
